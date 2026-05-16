@@ -1,5 +1,5 @@
 @import url(https://fonts.bunny.net/css?family=assistant:500);
-:root{--safe-bottom:env(safe-area-inset-bottom)}::-webkit-scrollbar{height:8px;width:8px}::-webkit-scrollbar-thumb{background:#e5e7eb;border-radius:999px}.no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
+:root{--safe-bottom:env(safe-area-inset-bottom)}::-webkit-scrollbar{height:8px;width:8px}::-webkit-scrollbar-thumb{background:#e5e7eb;border-radius:999px}@media(pointer: coarse){.no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}}
 html,body{overscroll-behavior-y:contain;font-family:'Assistant',sans-serif}
 .markdown-body{font-size:14px;line-height:1.6}.markdown-body pre{overflow:auto}
 .markdown-body ul,.markdown-body ol{list-style:revert;padding-left:2em}
