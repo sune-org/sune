@@ -2199,7 +2199,14 @@ async function syncActiveThread() {
 		setBtnStop();
 	}
 	const bubble = getBubbleById(id);
-	if (!bubble) return false;
+	if (!bubble) {
+		if (state.busy) {
+			setBtnSend();
+			state.busy = false;
+			state.controller = null;
+		}
+		return false;
+	}
 	const msgIdx = state.messages.findIndex((x) => x.id === id);
 	const localText = msgIdx >= 0 ? partsToText(state.messages[msgIdx]) : bubble.textContent || "";
 	const j = await fetch(HTTP_BASE + "?uid=" + encodeURIComponent(id)).then((r) => r.ok ? r.json() : null).catch(() => null);
@@ -2233,6 +2240,13 @@ async function syncActiveThread() {
 				type: "text",
 				text: t
 			}]);
+		} else {
+			await cacheStore.setItem(id, "done");
+			if (state.busy) {
+				setBtnSend();
+				state.busy = false;
+				state.controller = null;
+			}
 		}
 		return false;
 	}
