@@ -526,6 +526,38 @@ var parseGhUrl = (u) => {
 		apiPath: `${owner}/${repo}/contents${path ? "/" + path : ""}`
 	};
 };
+var ghGetFileContent = async (info, fileName) => {
+	const meta = await ghApi(`${info.apiPath}/${fileName}?ref=${info.branch}`);
+	if (!meta) {
+		console.warn("[Sune] GH file not found:", fileName);
+		return null;
+	}
+	console.log("[Sune] GH file meta:", {
+		name: fileName,
+		size: meta.size,
+		encoding: meta.encoding,
+		hasContent: !!(meta.content && meta.content.trim()),
+		sha: meta.sha
+	});
+	if (meta.content && meta.encoding === "base64") try {
+		return btou(meta.content);
+	} catch (e) {
+		console.error("[Sune] decode (contents) failed:", e);
+	}
+	if (meta.sha) try {
+		const blob = await ghApi(`${info.owner}/${info.repo}/git/blobs/${meta.sha}`);
+		console.log("[Sune] GH blob:", {
+			size: blob?.size,
+			encoding: blob?.encoding,
+			hasContent: !!(blob?.content && blob.content.trim())
+		});
+		if (blob && blob.content && blob.encoding === "base64") return btou(blob.content);
+	} catch (e) {
+		console.error("[Sune] blob fetch failed:", e);
+	}
+	console.warn("[Sune] Could not retrieve content for", fileName);
+	return null;
+};
 //#endregion
 //#region src/markdown.js
 var md = window.md = window.markdownit({
@@ -1331,16 +1363,19 @@ $(el.threadList).on("click", async (e) => {
 		clearChat();
 		const u = el.threadRepoInput.value.trim(), prefix = u.startsWith("gh://") ? "rem_t_" : "t_";
 		let msgs = await localforage.getItem(prefix + id);
-		if (!msgs && u.startsWith("gh://")) try {
-			const info = parseGhUrl(u), fileName = serializeThreadName(th), res = await ghApi(`${info.apiPath}/${fileName}?ref=${info.branch}`);
-			if (res && res.content) {
-				msgs = JSON.parse(btou(res.content));
+		if ((!msgs || !Array.isArray(msgs) || !msgs.length) && u.startsWith("gh://")) try {
+			const info = parseGhUrl(u), fileName = serializeThreadName(th), text = await ghGetFileContent(info, fileName);
+			if (text) try {
+				msgs = JSON.parse(text);
 				await localforage.setItem(prefix + id, msgs);
 				th.status = "synced";
 				await THREAD.save();
+			} catch (pe) {
+				console.error("[Sune] Thread JSON parse failed for", fileName, "len", text.length, pe);
 			}
+			else console.warn("[Sune] Remote thread returned no content:", fileName);
 		} catch (e) {
-			console.error("Remote fetch failed", e);
+			console.error("[Sune] Remote fetch failed", e);
 		}
 		state.messages = Array.isArray(msgs) ? [...msgs] : [];
 		for (const m of state.messages) {
@@ -2385,6 +2420,7 @@ Object.assign(window, {
 	cacheStore,
 	ghApi,
 	parseGhUrl,
+	ghGetFileContent,
 	pullThreads
 });
 //#endregion
