@@ -1,11 +1,7 @@
 @import url(https://fonts.bunny.net/css?family=assistant:500);
-:root{--safe-bottom:env(safe-area-inset-bottom)}
-::-webkit-scrollbar{height:8px;width:8px}
-::-webkit-scrollbar-thumb{background:#e5e7eb;border-radius:999px}
-@media(pointer: coarse){.no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}}
+:root{--safe-bottom:env(safe-area-inset-bottom)}::-webkit-scrollbar{height:8px;width:8px}::-webkit-scrollbar-thumb{background:#e5e7eb;border-radius:999px}@media(pointer: coarse){.no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}}
 html,body{overscroll-behavior-y:contain;font-family:'Assistant',sans-serif}
-.markdown-body{font-size:14px;line-height:1.6}
-.markdown-body pre{overflow:auto}
+.markdown-body{font-size:14px;line-height:1.6}.markdown-body pre{overflow:auto}
 .markdown-body ul,.markdown-body ol{list-style:revert;padding-left:2em}
 .msg-bubble{overflow-x:auto}
 .msg-avatar{font-size:16px}
@@ -14,6 +10,7 @@ html,body{overscroll-behavior-y:contain;font-family:'Assistant',sans-serif}
 #htmlEditor,#extensionHtmlEditor,#jsonSchemaEditor{outline:none;white-space:pre!important;font-size:11px;line-height:1.5;}
 :not(pre)>code{font-size:85%;padding:.2em .4em;margin:0;border-radius:6px;background-color:rgba(175,184,193,0.2)}
 #threadRepoInput::placeholder{font-family:sans-serif;font-weight:500;color:#9ca3af}
+
 /* MathJax 3 SVG Scaling & Alignment */
 mjx-container[jax="SVG"] {
   display: inline-block;
