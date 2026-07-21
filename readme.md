@@ -34,7 +34,7 @@ Never lose a conversation again. Sune can sync all your threads to a GitHub repo
 
 ![Sync](./public/appstore_content/sync.png)
 
-### Setup
+### Setup for Syncing Chats
 
 1. **Create a GitHub repo** — can be private or public, whatever you prefer. Something like `.chats`.
 
