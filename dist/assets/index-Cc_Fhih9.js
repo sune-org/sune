@@ -1296,9 +1296,8 @@ var sortedThreads = [], isAddingThreads = false;
 var THREAD_PAGE_SIZE = 50;
 async function renderThreads() {
 	sortedThreads = [...THREAD.list].filter((t) => t.status !== "deleted").sort((a, b) => {
-		if (a.type === "file" && b.type !== "file") return -1;
-		if (a.type !== "file" && b.type === "file") return 1;
-		return b.pinned - a.pinned || b.updatedAt - a.updatedAt;
+		const r = (t) => t.type === "folder" ? 0 : t.type === "file" ? 1 : 2;
+		return r(a) - r(b) || b.pinned - a.pinned || b.updatedAt - a.updatedAt;
 	});
 	el.threadList.innerHTML = sortedThreads.slice(0, THREAD_PAGE_SIZE).map(threadRow).join("");
 	el.threadList.scrollTop = 0;
