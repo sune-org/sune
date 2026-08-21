@@ -1215,7 +1215,7 @@ function setBtnSend() {
 	b.onclick = null;
 }
 function localDemoReply() {
-	return "Tip: open the sidebar → Account & Backup to set your API key.";
+	return "Tip: open the sidebar → User to set your API key.";
 }
 var TKEY = "threads_v1", THREAD = window.THREAD = {
 	list: [],
