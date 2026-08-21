@@ -7,7 +7,7 @@ export const el = window.el = Object.fromEntries(
     'set_reasoning_effort','set_system_prompt','set_hide_composer','set_include_thoughts',
     'set_img_output','set_aspect_ratio','set_image_size','aspectRatioContainer',
     'set_ignore_master_prompt','deleteSuneBtn','sidebarLeft','sidebarOverlayLeft','sidebarBtnLeft',
-    'suneList','newSuneBtn','userMenuBtn','userMenu','accountSettingsOption','sunesImportOption',
+    'suneList','newSuneBtn','userMenuBtn','userMenuAvatar','userMenu','accountSettingsOption','sunesImportOption',
     'sunesExportOption','threadsImportOption','importInput','sidebarBtnRight','sidebarRight',
     'sidebarOverlayRight','threadList','closeThreads','threadPopover','sunePopover','footer',
     'attachBtn','attachBadge','fileInput','htmlEditor','extensionHtmlEditor',
