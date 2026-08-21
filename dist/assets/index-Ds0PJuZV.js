@@ -267,6 +267,7 @@ var el = window.el = Object.fromEntries([
 	"suneList",
 	"newSuneBtn",
 	"userMenuBtn",
+	"userMenuAvatar",
 	"userMenu",
 	"accountSettingsOption",
 	"sunesImportOption",
@@ -1094,6 +1095,17 @@ var renderSidebar = window.renderSidebar = () => {
 	const list = [...SUNE.list].sort((a, b) => b.pinned - a.pinned);
 	el.suneList.innerHTML = list.map(suneRow).join("");
 	icons();
+};
+var renderUserUI = window.renderUserUI = () => {
+	if (!el.userMenuAvatar) return;
+	const a = USER.avatar;
+	if (a) {
+		el.userMenuAvatar.className = "h-6 w-6 rounded-full overflow-hidden shrink-0";
+		el.userMenuAvatar.innerHTML = `<img src="${esc(a)}" class="h-full w-full object-cover"/>`;
+	} else {
+		el.userMenuAvatar.className = "h-6 w-6 rounded-full bg-gray-900 text-white flex items-center justify-center shrink-0 text-xs";
+		el.userMenuAvatar.textContent = "👤";
+	}
 };
 var getSuneLabel = (m) => {
 	return `${m && m.sune_name || SUNE.name} · ${getModelShort(m && m.model)}`;
@@ -1930,6 +1942,7 @@ async function init() {
 	await renderThreads();
 	await Promise.allSettled(STICKY_SUNES.map((s) => SUNE.fetchDotSune(s)));
 	renderSidebar();
+	renderUserUI();
 	await reflectActiveSune();
 	clearChat();
 	icons();
@@ -2130,6 +2143,18 @@ $(el.cancelAccountSettings).on("click", closeAccountSettings);
 $(el.accountSettingsModal).on("click", (e) => {
 	if (e.target === el.accountSettingsModal || e.target.classList.contains("bg-black/30")) closeAccountSettings();
 });
+$(el.setUserAvatarBtn).on("click", () => el.userAvatarInput.click());
+$(el.userAvatarInput).on("change", async () => {
+	const f = el.userAvatarInput.files?.[0];
+	if (!f) return;
+	try {
+		const v = await imgToWebp(f);
+		USER.avatar = v;
+		el.userAvatarPreview.src = v;
+		el.userAvatarPreview.classList.remove("bg-gray-200");
+		renderUserUI();
+	} catch {}
+});
 $(el.accountSettingsForm).on("submit", (e) => {
 	e.preventDefault();
 	USER.provider = el.set_provider.value || "openrouter";
@@ -2143,6 +2168,7 @@ $(el.accountSettingsForm).on("submit", (e) => {
 	USER.titleModel = String(el.set_title_model.value || "").trim();
 	USER.githubToken = String(el.set_gh_token.value || "").trim();
 	USER.name = String(el.set_user_name.value || "").trim();
+	renderUserUI();
 	closeAccountSettings();
 });
 $(el.accountPanelAPI).on("click", (e) => {
@@ -2200,6 +2226,7 @@ el.importAccountSettingsInput.onchange = async (e) => {
 			const v = d[p] ?? d[k];
 			if (typeof v === "string") USER[p] = v;
 		});
+		renderUserUI();
 		openAccountSettings();
 		alert("Imported.");
 	} catch {
@@ -2372,6 +2399,7 @@ Object.assign(window, {
 	renderSuneHTML,
 	reflectActiveSune,
 	suneRow,
+	renderUserUI,
 	enhanceCodeBlocks,
 	getSuneLabel,
 	_createMessageRow,
