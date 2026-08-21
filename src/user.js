@@ -1,6 +1,6 @@
 export const USER = {
   get PAT() { return this.githubToken; },
-  get name() { return localStorage.getItem('user_name') || 'Anon'; },
+  get name() { return localStorage.getItem('user_name') || 'User'; },
   set name(v) { localStorage.setItem('user_name', v || ''); },
   get avatar() { return localStorage.getItem('user_avatar') || ''; },
   set avatar(v) { localStorage.setItem('user_avatar', v || ''); },
