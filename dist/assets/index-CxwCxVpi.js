@@ -411,7 +411,7 @@ var USER = {
 		return this.githubToken;
 	},
 	get name() {
-		return localStorage.getItem("user_name") || "Anon";
+		return localStorage.getItem("user_name") || "User";
 	},
 	set name(v) {
 		localStorage.setItem("user_name", v || "");
