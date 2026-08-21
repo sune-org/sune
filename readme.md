@@ -44,7 +44,7 @@ Never lose a conversation again. Sune can sync all your threads to a GitHub repo
    - Copy the token
 
 3. **Add your token in Sune**
-   - Open the left sidebar → **Account & Backup** → **Settings**
+   - Open the left sidebar → **User** → **Settings**
    - Go to the **API** tab
    - Paste your token into the **Github Token** field
    - Hit **Save**
