@@ -385,12 +385,45 @@ var imgToWebp = (f, D = 128, q = 80) => new Promise((r, j) => {
 var b64 = (x) => x.split(",")[1] || "";
 var utob = (s) => btoa(unescape(encodeURIComponent(s)));
 var btou = (s) => decodeURIComponent(escape(atob(s.replace(/\s/g, ""))));
-function partsToText(m) {
+async function copyToClipboard(text) {
+	if (typeof text !== "string") text = String(text ?? "");
+	if (navigator.clipboard?.writeText) try {
+		await navigator.clipboard.writeText(text);
+		return true;
+	} catch {}
+	try {
+		const ta = document.createElement("textarea");
+		ta.value = text;
+		ta.style.position = "fixed";
+		ta.style.opacity = "0";
+		ta.style.left = "-9999px";
+		document.body.appendChild(ta);
+		ta.focus();
+		ta.select();
+		const ok = document.execCommand("copy");
+		ta.remove();
+		return ok;
+	} catch {
+		return false;
+	}
+}
+function partsToText(m, stripData = false) {
 	if (!m) return "";
-	const c = m.content, i = m.images;
-	let t = Array.isArray(c) ? c.map((p) => p?.type === "text" ? p.text : p?.type === "image_url" ? `![](${p.image_url?.url || ""})` : p?.type === "file" ? `[${p.file?.filename || "file"}]` : p?.type === "input_audio" ? `(audio:${p.input_audio?.format || ""})` : "").join("\n") : String(c || "");
-	if (Array.isArray(i)) t += i.map((x) => `\n![](${x.image_url?.url})\n`).join("");
-	return t;
+	const c = m.content, i = m.images, out = [];
+	if (Array.isArray(c)) {
+		for (const p of c) if (p?.type === "text") {
+			if (p.text) out.push(p.text);
+		} else if (p?.type === "image_url") {
+			const u = p.image_url?.url || "";
+			if (!stripData || !u.startsWith("data:")) out.push(`![](${u})`);
+		} else if (p?.type === "file") out.push(`[${p.file?.filename || "file"}]`);
+		else if (p?.type === "input_audio") out.push(`(audio:${p.input_audio?.format || ""})`);
+	} else if (c != null) out.push(String(c));
+	if (Array.isArray(i)) for (const x of i) {
+		const u = x.image_url?.url || "";
+		if (!stripData || !u.startsWith("data:")) out.push(`![](${u})`);
+	}
+	return out.join("\n");
 }
 function dl(name, obj) {
 	const blob = new Blob([JSON.stringify(obj, null, 2)], { type: name.endsWith(".sune") ? "application/octet-stream" : "application/json" }), url = URL.createObjectURL(blob), a = document.createElement("a");
@@ -575,11 +608,10 @@ function enhanceCodeBlocks(root, doHL = true) {
 			const len = code.textContent.length, countText = len >= 1e3 ? (len / 1e3).toFixed(1) + "K" : len;
 			const $btn = window.$("<button class=\"bg-slate-900 text-white rounded-lg py-1 px-2 text-xs opacity-85\">Copy</button>").on("click", async (e) => {
 				e.stopPropagation();
-				try {
-					await navigator.clipboard.writeText(code.innerText);
+				if (await copyToClipboard(code.innerText)) {
 					$btn.text("Copied");
 					setTimeout(() => $btn.text("Copy"), 1200);
-				} catch {}
+				}
 			});
 			const $container = window.$("<div class=\"code-actions absolute top-2 right-2 flex items-center gap-2\"></div>");
 			$container.append(window.$(`<span class="text-xs text-gray-500">${countText} chars</span>`), $btn);
@@ -1123,15 +1155,14 @@ function _createMessageRow(m) {
 	});
 	const $copyBtn = $("<button class=\"ml-auto p-1.5 rounded-lg hover:bg-gray-200 text-gray-400 hover:text-gray-600\" title=\"Copy message\"><i data-lucide=\"copy\" class=\"h-4 w-4\"></i></button>").on("click", async function(e) {
 		e.stopPropagation();
-		try {
-			await navigator.clipboard.writeText(partsToText(m));
+		if (await copyToClipboard(partsToText(state.messages.find((x) => x.id === m.id) || m, true))) {
 			$(this).html("<i data-lucide=\"check\" class=\"h-4 w-4 text-green-500\"></i>");
 			icons();
 			setTimeout(() => {
 				$(this).html("<i data-lucide=\"copy\" class=\"h-4 w-4\"></i>");
 				icons();
 			}, 1200);
-		} catch {}
+		}
 	});
 	$head.append($avatar, $name, $copyBtn, $deleteBtn);
 	const $bubble = $(`<div class="${(isUser ? "bg-gray-50 border border-gray-200" : "bg-gray-100") + " msg-bubble markdown-body rounded-none px-4 py-3 w-full"}"></div>`);
@@ -1485,10 +1516,7 @@ $(el.threadPopover).on("click", async (e) => {
 		const u = el.threadRepoInput.value.trim();
 		if (u.startsWith("gh://")) {
 			const info = parseGhUrl(u);
-			try {
-				await navigator.clipboard.writeText(`${info.owner}/${info.repo}@${info.branch}/${th.id}`);
-				alert("Path copied.");
-			} catch {}
+			if (await copyToClipboard(`${info.owner}/${info.repo}@${info.branch}/${th.id}`)) alert("Path copied.");
 		}
 	}
 	hideThreadPopover();
@@ -2355,11 +2383,7 @@ var onForeground = () => {
 	if (state.busy) syncWhileBusy();
 };
 $(document).on("visibilitychange", onForeground);
-$(el.copySystemPrompt).on("click", async () => {
-	try {
-		await navigator.clipboard.writeText(el.set_system_prompt.value || "");
-	} catch {}
-});
+$(el.copySystemPrompt).on("click", async () => await copyToClipboard(el.set_system_prompt.value || ""));
 $(el.pasteSystemPrompt).on("click", async () => {
 	try {
 		el.set_system_prompt.value = await navigator.clipboard.readText();
@@ -2367,10 +2391,8 @@ $(el.pasteSystemPrompt).on("click", async () => {
 });
 var getActiveJar = () => !el.htmlEditor.classList.contains("hidden") ? jars.html : jars.extension;
 $(el.copyHTML).on("click", async () => {
-	try {
-		const jar = getActiveJar();
-		await navigator.clipboard.writeText(jar ? jar.toString() : "");
-	} catch {}
+	const jar = getActiveJar();
+	await copyToClipboard(jar ? jar.toString() : "");
 });
 $(el.pasteHTML).on("click", async () => {
 	try {
@@ -2405,6 +2427,7 @@ Object.assign(window, {
 	_createMessageRow,
 	msgRow,
 	partsToText,
+	copyToClipboard,
 	addSuneBubbleStreaming,
 	clearChat,
 	payloadWithSampling,
