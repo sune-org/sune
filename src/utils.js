@@ -33,12 +33,52 @@ export const b64 = x => x.split(',')[1] || '';
 export const utob = s => btoa(unescape(encodeURIComponent(s)));
 export const btou = s => decodeURIComponent(escape(atob(s.replace(/\s/g, ''))));
 
-export function partsToText(m) {
+export async function copyToClipboard(text) {
+  if (typeof text !== 'string') text = String(text ?? '');
+  if (navigator.clipboard?.writeText) {
+    try { await navigator.clipboard.writeText(text); return true; } catch {}
+  }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand('copy');
+    ta.remove();
+    return ok;
+  } catch { return false; }
+}
+
+export function partsToText(m, stripData = false) {
   if (!m) return '';
-  const c = m.content, i = m.images;
-  let t = Array.isArray(c) ? c.map(p => p?.type === 'text' ? p.text : (p?.type === 'image_url' ? `![](${p.image_url?.url || ''})` : (p?.type === 'file' ? `[${p.file?.filename || 'file'}]` : (p?.type === 'input_audio' ? `(audio:${p.input_audio?.format || ''})` : '')))).join('\n') : String(c || '');
-  if (Array.isArray(i)) t += i.map(x => `\n![](${x.image_url?.url})\n`).join('');
-  return t;
+  const c = m.content, i = m.images, out = [];
+  if (Array.isArray(c)) {
+    for (const p of c) {
+      if (p?.type === 'text') {
+        if (p.text) out.push(p.text);
+      } else if (p?.type === 'image_url') {
+        const u = p.image_url?.url || '';
+        if (!stripData || !u.startsWith('data:')) out.push(`![](${u})`);
+      } else if (p?.type === 'file') {
+        out.push(`[${p.file?.filename || 'file'}]`);
+      } else if (p?.type === 'input_audio') {
+        out.push(`(audio:${p.input_audio?.format || ''})`);
+      }
+    }
+  } else if (c != null) {
+    out.push(String(c));
+  }
+  if (Array.isArray(i)) {
+    for (const x of i) {
+      const u = x.image_url?.url || '';
+      if (!stripData || !u.startsWith('data:')) out.push(`![](${u})`);
+    }
+  }
+  return out.join('\n');
 }
 
 export function dl(name, obj) {
