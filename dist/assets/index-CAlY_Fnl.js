@@ -2102,7 +2102,17 @@ $(el.threadSyncBtn).on("click", async () => {
 				}
 				if (t.type !== "thread") continue;
 				if (t.status === "modified" || t.status === "new") {
-					const newName = serializeThreadName(t), msgs = await localforage.getItem("rem_t_" + t.id);
+					const newName = serializeThreadName(t);
+					let msgs = await localforage.getItem("rem_t_" + t.id);
+					if ((!msgs || !Array.isArray(msgs)) && remoteMap[t.id]) {
+						const text = await ghGetFileContent(info, remoteMap[t.id].name);
+						if (text) try {
+							msgs = JSON.parse(text);
+							await localforage.setItem("rem_t_" + t.id, msgs);
+						} catch (e) {
+							console.error(e);
+						}
+					}
 					if (remoteMap[t.id] && remoteMap[t.id].name !== newName) await ghApi(`${info.apiPath}/${remoteMap[t.id].name}`, "DELETE", {
 						message: `Rename thread ${t.id}`,
 						sha: remoteMap[t.id].sha,
@@ -2111,7 +2121,7 @@ $(el.threadSyncBtn).on("click", async () => {
 					const x = await ghApi(`${info.apiPath}/${newName}?ref=${info.branch}`);
 					await ghApi(`${info.apiPath}/${newName}`, "PUT", {
 						message: `Sync thread ${t.id}`,
-						content: utob(JSON.stringify(msgs, null, 2)),
+						content: utob(JSON.stringify(msgs || [], null, 2)),
 						branch: info.branch,
 						sha: x?.sha
 					});
