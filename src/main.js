@@ -18,7 +18,7 @@ const icons=()=>window.lucide&&lucide.createIcons()
 const haptic=()=>/android/i.test(navigator.userAgent)&&navigator.vibrate?.(1)
 
 const SYSTEM_KEYS=new Set(['sunes_v1','active_sune_id','thread_repo_url','user_name','user_avatar','provider','openrouter_api_key','openai_api_key','google_api_key','claude_api_key','cloudflare_api_key','master_prompt','title_model','gh_token','custom_key_1'])
-const gcStorage=()=>{try{const alive=new Set(sunes.map(s=>s.id));Object.keys(localStorage).forEach(k=>{if(SYSTEM_KEYS.has(k)||/^(t_|rem_t_|rem_index_|localforage|threads_)/.test(k))return;const m=k.match(/^sune_([a-zA-Z0-9_-]+)_/);if(m&&alive.has(m[1]))return;localStorage.removeItem(k)})}catch{}}
+const gcStorage=()=>{try{const alive=new Set(sunes.map(s=>s.id));Object.keys(localStorage).forEach(k=>{if(SYSTEM_KEYS.has(k)||/^(t_|rem_t_|rem_index_|localforage|threads_)/.test(k))return;const m=k.match(/^sune_([^_]+)_/);if(m&&alive.has(m[1]))return;localStorage.removeItem(k)})}catch{}}
 const cleanSuneStorage=id=>{if(!id)return;const p=`sune_${id}_`;Object.keys(localStorage).forEach(k=>{if(k.startsWith(p))localStorage.removeItem(k)})}
 
 const suneStorage={
