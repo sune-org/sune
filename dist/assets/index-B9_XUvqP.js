@@ -897,7 +897,7 @@ var gcStorage = () => {
 		const alive = new Set(sunes.map((s) => s.id));
 		Object.keys(localStorage).forEach((k) => {
 			if (SYSTEM_KEYS.has(k) || /^(t_|rem_t_|rem_index_|localforage|threads_)/.test(k)) return;
-			const m = k.match(/^sune_([a-zA-Z0-9_-]+)_/);
+			const m = k.match(/^sune_([^_]+)_/);
 			if (m && alive.has(m[1])) return;
 			localStorage.removeItem(k);
 		});
