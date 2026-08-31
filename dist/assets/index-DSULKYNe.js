@@ -923,8 +923,7 @@ var makeSune = (p = {}) => ({
 	avatar: p.avatar || "",
 	url: p.url || "",
 	updatedAt: p.updatedAt || Date.now(),
-	settings: Object.assign({}, defaultSettings, p.settings || {}),
-	storage: p.storage || {}
+	settings: Object.assign({}, defaultSettings, p.settings || {})
 });
 var sunes = (su.load() || []).map(makeSune);
 var SUNE = window.SUNE = new Proxy({
@@ -1078,7 +1077,7 @@ var SUNE = window.SUNE = new Proxy({
 		if (!a) return false;
 		const i = sunes.findIndex((s) => s.id === a.id);
 		if (i < 0) return false;
-		const isTopLevel = /^(name|avatar|url|pinned|storage)$/.test(p), target = isTopLevel ? sunes[i] : sunes[i].settings;
+		const isTopLevel = /^(name|avatar|url|pinned)$/.test(p), target = isTopLevel ? sunes[i] : sunes[i].settings;
 		let value = v;
 		if (!isTopLevel) {
 			if (p === "system_prompt") value = v || "";
@@ -2252,8 +2251,8 @@ el.importAccountSettingsInput.onchange = async (e) => {
 			apiKeyOpenRouter: "apiKeyOR",
 			apiKeyOpenAI: "apiKeyOAI",
 			apiKeyGoogle: "apiKeyG",
-			apiKeyClaude: "apiKeyC",
-			apiKeyCloudflare: "apiKeyCF",
+			apiKeyClaude: "apiKeyClaude",
+			apiKeyCloudflare: "apiKeyCloudflare",
 			customKey1: "customKey1",
 			masterPrompt: "masterPrompt",
 			titleModel: "titleModel",
