@@ -875,6 +875,76 @@ var __vitePreload = function preload(baseModule, deps, importerUrl) {
 var DEFAULT_MODEL = "openrouter/free";
 var icons = () => window.lucide && lucide.createIcons();
 var haptic = () => /android/i.test(navigator.userAgent) && navigator.vibrate?.(1);
+var SYSTEM_KEYS = new Set([
+	"sunes_v1",
+	"active_sune_id",
+	"thread_repo_url",
+	"user_name",
+	"user_avatar",
+	"provider",
+	"openrouter_api_key",
+	"openai_api_key",
+	"google_api_key",
+	"claude_api_key",
+	"cloudflare_api_key",
+	"master_prompt",
+	"title_model",
+	"gh_token",
+	"custom_key_1"
+]);
+var gcStorage = () => {
+	try {
+		const alive = new Set(sunes.map((s) => s.id));
+		Object.keys(localStorage).forEach((k) => {
+			if (SYSTEM_KEYS.has(k) || /^(t_|rem_t_|rem_index_|localforage|threads_)/.test(k)) return;
+			const m = k.match(/^sune_([a-zA-Z0-9_-]+)_/);
+			if (m && alive.has(m[1])) return;
+			localStorage.removeItem(k);
+		});
+	} catch {}
+};
+var cleanSuneStorage = (id) => {
+	if (!id) return;
+	const p = `sune_${id}_`;
+	Object.keys(localStorage).forEach((k) => {
+		if (k.startsWith(p)) localStorage.removeItem(k);
+	});
+};
+var suneStorage = {
+	get(k, def = null) {
+		const id = SUNE.id;
+		if (!id) return def;
+		const v = localStorage.getItem(`sune_${id}_${k}`);
+		if (v === null) return def;
+		try {
+			return JSON.parse(v);
+		} catch {
+			return v;
+		}
+	},
+	set(k, v) {
+		const id = SUNE.id;
+		if (id) localStorage.setItem(`sune_${id}_${k}`, JSON.stringify(v));
+	},
+	remove(k) {
+		const id = SUNE.id;
+		if (id) localStorage.removeItem(`sune_${id}_${k}`);
+	},
+	clear() {
+		const id = SUNE.id;
+		if (id) cleanSuneStorage(id);
+	},
+	keys() {
+		const id = SUNE.id;
+		if (!id) return [];
+		const p = `sune_${id}_`;
+		return Object.keys(localStorage).filter((k) => k.startsWith(p)).map((k) => k.slice(p.length));
+	},
+	key(k) {
+		const id = SUNE.id;
+		return id ? `sune_${id}_${k}` : k;
+	}
+};
 var su = {
 	key: "sunes_v1",
 	activeKey: "active_sune_id",
@@ -927,6 +997,7 @@ var makeSune = (p = {}) => ({
 });
 var sunes = (su.load() || []).map(makeSune);
 var SUNE = window.SUNE = new Proxy({
+	storage: suneStorage,
 	get list() {
 		return sunes;
 	},
@@ -948,6 +1019,8 @@ var SUNE = window.SUNE = new Proxy({
 		const curId = this.id;
 		sunes = sunes.filter((s) => s.id !== id);
 		su.save(sunes);
+		cleanSuneStorage(id);
+		gcStorage();
 		if (sunes.length === 0) {
 			const def = this.create({ name: "Default" });
 			this.setActive(def.id);
@@ -1961,6 +2034,7 @@ USER.logMany = async (msgs) => {
 	await THREAD.persist();
 };
 async function init() {
+	gcStorage();
 	const u = localStorage.getItem("thread_repo_url") || "";
 	el.threadRepoInput.value = u;
 	el.threadFolderBtn.classList.toggle("hidden", !u.startsWith("gh://"));
@@ -2480,6 +2554,9 @@ Object.assign(window, {
 	ghApi,
 	parseGhUrl,
 	ghGetFileContent,
-	pullThreads
+	pullThreads,
+	suneStorage,
+	gcStorage,
+	cleanSuneStorage
 });
 //#endregion
