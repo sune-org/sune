@@ -19,6 +19,6 @@ export const el = window.el = Object.fromEntries(
     'importAccountSettings','exportAccountSettings',
     'importAccountSettingsInput','accountTabUser','accountPanelUser','set_user_name',
     'userAvatarPreview','setUserAvatarBtn','userAvatarInput','threadRepoInput','threadBackBtn',
-    'threadFolderBtn','threadSyncBtn'
+    'threadFolderBtn','threadSyncBtn','suneRepoInput','suneSyncBtn'
   ].map(id => [id, document.getElementById(id)])
 );
