@@ -2,6 +2,7 @@ import mathjax3 from 'https://esm.sh/markdown-it-mathjax3';
 import { copyToClipboard } from './utils.js';
 
 export const md = window.md = window.markdownit({ html: false, linkify: true, typographer: true, breaks: true }).use(mathjax3);
+md.linkify.set({ fuzzyLink: true });
 
 export function enhanceCodeBlocks(root, doHL = true) {
   window.$(root).find('pre>code').each((i, code) => {
