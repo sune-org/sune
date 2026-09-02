@@ -324,7 +324,9 @@ var el = window.el = Object.fromEntries([
 	"threadRepoInput",
 	"threadBackBtn",
 	"threadFolderBtn",
-	"threadSyncBtn"
+	"threadSyncBtn",
+	"suneRepoInput",
+	"suneSyncBtn"
 ].map((id) => [id, document.getElementById(id)]));
 //#endregion
 //#region src/utils.js
@@ -879,6 +881,7 @@ var SYSTEM_KEYS = new Set([
 	"sunes_v1",
 	"active_sune_id",
 	"thread_repo_url",
+	"sune_repo_url",
 	"user_name",
 	"user_avatar",
 	"provider",
@@ -2035,8 +2038,9 @@ USER.logMany = async (msgs) => {
 };
 async function init() {
 	gcStorage();
-	const u = localStorage.getItem("thread_repo_url") || "";
+	const u = localStorage.getItem("thread_repo_url") || "", suR = localStorage.getItem("sune_repo_url") || "";
 	el.threadRepoInput.value = u;
+	el.suneRepoInput.value = suR;
 	el.threadFolderBtn.classList.toggle("hidden", !u.startsWith("gh://"));
 	el.threadBackBtn.classList.toggle("hidden", !u.startsWith("gh://") || u.split("/").length <= 3);
 	await THREAD.load();
@@ -2213,6 +2217,53 @@ $(el.threadSyncBtn).on("click", async () => {
 		alert("Sync failed: " + e.message);
 	}
 });
+$(el.suneRepoInput).on("change", () => {
+	localStorage.setItem("sune_repo_url", el.suneRepoInput.value.trim());
+});
+$(el.suneSyncBtn).on("click", async () => {
+	const u = el.suneRepoInput.value.trim();
+	if (!u.startsWith("gh://")) return;
+	const mode = confirm("Sync Sunes:\nOK = Upload (Push)\nCancel = Download (Pull)"), info = parseGhUrl(u);
+	try {
+		if (mode) {
+			const data = {
+				version: 1,
+				sunes: SUNE.list,
+				activeId: SUNE.id,
+				storage: {}
+			};
+			SUNE.list.forEach((s) => {
+				const p = `sune_${s.id}_`;
+				Object.keys(localStorage).forEach((k) => {
+					if (k.startsWith(p)) data.storage[k] = localStorage.getItem(k);
+				});
+			});
+			const x = await ghApi(`${info.apiPath}/sunes.json?ref=${info.branch}`);
+			await ghApi(`${info.apiPath}/sunes.json`, "PUT", {
+				message: "Sync Sunes",
+				content: utob(JSON.stringify(data, null, 2)),
+				branch: info.branch,
+				sha: x?.sha
+			});
+			alert("Sunes pushed.");
+		} else {
+			const text = await ghGetFileContent(info, "sunes.json");
+			if (!text) throw new Error("sunes.json not found");
+			const data = JSON.parse(text);
+			if (data.sunes) {
+				sunes = data.sunes.map(makeSune);
+				SUNE.save();
+				if (data.activeId) SUNE.setActive(data.activeId);
+			}
+			if (data.storage) Object.entries(data.storage).forEach(([k, v]) => localStorage.setItem(k, v));
+			renderSidebar();
+			await reflectActiveSune();
+			alert("Sunes pulled.");
+		}
+	} catch (e) {
+		alert("Sync failed: " + e.message);
+	}
+});
 init();
 var accountTabs = {
 	General: ["accountTabGeneral", "accountPanelGeneral"],
@@ -2232,6 +2283,7 @@ function openAccountSettings() {
 	el.set_api_key_g.value = USER.apiKeyGoogle || "";
 	el.set_api_key_claude.value = USER.apiKeyClaude || "";
 	el.set_api_key_cf.value = USER.apiKeyCloudflare || "";
+	el.set_api_key_custom1.value = USER.customKey1 || "";
 	el.set_api_key_custom1.value = USER.customKey1 || "";
 	el.set_master_prompt.value = USER.masterPrompt || "";
 	el.set_title_model.value = USER.titleModel;
