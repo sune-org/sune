@@ -602,6 +602,7 @@ var md = window.md = window.markdownit({
 	typographer: true,
 	breaks: true
 }).use(mathjax3);
+md.linkify.set({ fuzzyLink: true });
 function enhanceCodeBlocks(root, doHL = true) {
 	window.$(root).find("pre>code").each((i, code) => {
 		if (code.textContent.length > 2e5) return;
