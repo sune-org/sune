@@ -20,6 +20,6 @@ export const el = window.el = Object.fromEntries(
     'importAccountSettingsInput','accountTabUser','accountPanelUser','set_user_name',
     'userAvatarPreview','setUserAvatarBtn','userAvatarInput','threadRepoInput','threadBackBtn',
     'threadFolderBtn','threadSyncBtn','suneRepoInput','suneSyncBtn',
-    'suneSyncBadge','suneSyncPopover','suneSyncUploadBtn','suneSyncDownloadBtn'
+    'suneSyncBadge','sunesSyncPopover','sunesSyncUploadBtn','sunesSyncDownloadBtn'
   ].map(id => [id, document.getElementById(id)])
 );

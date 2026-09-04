@@ -25,9 +25,10 @@ let isSyncPulling=false,suneSyncStatus='idle',remoteSha=null;
 const getLocalSunesUpdatedAt=()=>num(localStorage.getItem('sunes_updated_at'),0);
 const setLocalSunesUpdatedAt=(ts=Date.now())=>localStorage.setItem('sunes_updated_at',ts);
 const markLocalDirty=()=>{if(isSyncPulling)return;setLocalSunesUpdatedAt();setSuneSyncStatus('desynced')};
+const isSuneStorageKey=k=>!SYSTEM_KEYS.has(k)&&/^sune_[^_]+_/.test(k);
 const _origSetItem=localStorage.setItem.bind(localStorage),_origRemoveItem=localStorage.removeItem.bind(localStorage);
-localStorage.setItem=(k,v)=>{_origSetItem(k,v);if(!isSyncPulling&&k.startsWith('sune_'))markLocalDirty()};
-localStorage.removeItem=k=>{_origRemoveItem(k);if(!isSyncPulling&&k.startsWith('sune_'))markLocalDirty()};
+localStorage.setItem=(k,v)=>{_origSetItem(k,v);if(!isSyncPulling&&isSuneStorageKey(k))markLocalDirty()};
+localStorage.removeItem=k=>{_origRemoveItem(k);if(!isSyncPulling&&isSuneStorageKey(k))markLocalDirty()};
 
 function setSuneSyncStatus(status){
   suneSyncStatus=status;
@@ -96,8 +97,9 @@ let menuThreadId=null;const hideThreadPopover=()=>{el.threadPopover.classList.ad
 function showThreadPopover(btn,id){menuThreadId=id;el.threadPopover.classList.remove('hidden');positionPopover(btn,el.threadPopover);icons()}
 let menuSuneId=null;const hideSunePopover=()=>{el.sunePopover.classList.add('hidden');menuSuneId=null}
 function showSunePopover(btn,id){menuSuneId=id;el.sunePopover.classList.remove('hidden');positionPopover(btn,el.sunePopover);icons()}
-const hideSuneSyncPopover=()=>{el.suneSyncPopover.classList.add('hidden')}
-function showSuneSyncPopover(btn){el.suneSyncPopover.classList.remove('hidden');positionPopover(btn||el.suneSyncBtn,el.suneSyncPopover);icons()}
+const hideSunesSyncPopover=()=>{el.sunesSyncPopover.classList.add('hidden')},hideSuneSyncPopover=hideSunesSyncPopover;
+function showSunesSyncPopover(btn){el.sunesSyncPopover.classList.remove('hidden');positionPopover(btn||el.suneSyncBtn,el.sunesSyncPopover);icons()}
+const showSuneSyncPopover=showSunesSyncPopover;
 $(el.threadList).on('click',async e=>{const openBtn=e.target.closest('[data-open-thread]'),menuBtn=e.target.closest('[data-thread-menu]');if(openBtn){const id=openBtn.getAttribute('data-open-thread'),type=openBtn.getAttribute('data-type');if(type==='file'){const u=el.threadRepoInput.value.trim();if(u.startsWith('gh://')){const info=parseGhUrl(u);window.open(`https://github.com/${info.owner}/${info.repo}/blob/${info.branch}/${id}`,'_blank')}return}if(type==='folder'){const u=el.threadRepoInput.value.trim();el.threadRepoInput.value=u+(u.endsWith('/')?'':'/')+id;el.threadRepoInput.dispatchEvent(new Event('change'));return}if(id!==state.currentThreadId&&state.busy){state.controller?.disconnect?.();setBtnSend();state.busy=false;state.controller=null}const th=THREAD.get(id);if(!th)return;if(id===state.currentThreadId){el.sidebarRight.classList.add('translate-x-full');el.sidebarOverlayRight.classList.add('hidden');hideThreadPopover();return}state.currentThreadId=id;clearChat();const u=el.threadRepoInput.value.trim(),prefix=u.startsWith('gh://')?'rem_t_':'t_';let msgs=await localforage.getItem(prefix+id);if((!msgs||!Array.isArray(msgs)||!msgs.length)&&u.startsWith('gh://')){try{const info=parseGhUrl(u),fileName=serializeThreadName(th),text=await ghGetFileContent(info,fileName);if(text){try{msgs=JSON.parse(text);await localforage.setItem(prefix+id,msgs);th.status='synced';await THREAD.save()}catch(pe){console.error('[Sune] Thread JSON parse failed for',fileName,'len',text.length,pe)}}else{console.warn('[Sune] Remote thread returned no content:',fileName)}}catch(e){console.error('[Sune] Remote fetch failed',e)}}state.messages=Array.isArray(msgs)?[...msgs]:[];for(const m of state.messages){const b=msgRow(m);b.dataset.mid=m.id||'';renderMarkdown(b,partsToText(m))}await renderSuneHTML();syncWhileBusy();queueMicrotask(()=>el.chat.scrollTo({top:el.chat.scrollHeight,behavior:'smooth'}));el.sidebarRight.classList.add('translate-x-full');el.sidebarOverlayRight.classList.add('hidden');hideThreadPopover();return}if(menuBtn){e.stopPropagation();showThreadPopover(menuBtn,menuBtn.getAttribute('[data-thread-menu]')?menuBtn.getAttribute('[data-thread-menu]'):menuBtn.getAttribute('data-thread-menu'))}})
 $(el.threadList).on('scroll',()=>{
   if(isAddingThreads||el.threadList.scrollTop+el.threadList.clientHeight<el.threadList.scrollHeight-200)return;
@@ -114,8 +116,8 @@ $(el.threadList).on('scroll',()=>{
 $(el.threadPopover).on('click',async e=>{const act=e.target.closest('[data-action]')?.getAttribute('data-action');if(!act||!menuThreadId)return;const th=THREAD.get(menuThreadId);if(!th)return;const u=el.threadRepoInput.value.trim(),prefix=u.startsWith('gh://')?'rem_t_':'t_';if(act==='pin'){th.pinned=!th.pinned;if(u.startsWith('gh://')&&th.status!=='new')th.status='modified'}else if(act==='rename'){const nv=prompt('Rename to:',th.title);if(nv!=null){th.title=titleFrom(nv);th.updatedAt=Date.now();if(u.startsWith('gh://')&&th.status!=='new')th.status='modified'}}else if(act==='duplicate'){const newId=gid(),msgs=await localforage.getItem(prefix+th.id)||[];const newTh={...th,id:newId,title:th.title+' (Copy)',updatedAt:Date.now()};if(u.startsWith('gh://'))newTh.status='new';THREAD.list.unshift(newTh);await localforage.setItem(prefix+newId,msgs);await THREAD.save();await renderThreads()}else if(act==='delete'){if(confirm('Delete this chat?')){if(u.startsWith('gh://')){th.status='deleted';th.updatedAt=Date.now()}else{THREAD.list=THREAD.list.filter(x=>!th.id!==th.id);await localforage.removeItem(prefix+th.id)}if(state.currentThreadId===th.id){state.currentThreadId=null;clearChat()}}}else if(act==='count_tokens'){const msgs=await localforage.getItem(prefix+th.id)||[];let totalChars=0;for(const m of msgs){if(!m||!m.role||m.role==='system')continue;totalChars+=String(partsToText(m)||'').length}const tokens=Math.max(0,Math.ceil(totalChars/4));const k=tokens>=1000?Math.round(tokens/1000)+'k':String(tokens);alert(tokens+' tokens ('+k+')')}else if(act==='export'){const msgs=await localforage.getItem(prefix+th.id)||[];dl(`thread-${(th.title||'thread').replace(/\W/g,'_')}-${ts()}.json`,{...th,messages:msgs})}else if(act==='copy_path'){const u=el.threadRepoInput.value.trim();if(u.startsWith('gh://')){const info=parseGhUrl(u);if(await copyToClipboard(`${info.owner}/${info.repo}@${info.branch}/${th.id}`))alert('Path copied.')}}hideThreadPopover();await THREAD.save();renderThreads()})
 $(el.suneList).on('click',async e=>{const menuBtn=e.target.closest('[data-sune-menu]');if(menuBtn){e.stopPropagation();showSunePopover(menuBtn,menuBtn.getAttribute('[data-sune-menu]')?menuBtn.getAttribute('[data-sune-menu]'):menuBtn.getAttribute('data-sune-menu'));return}const btn=e.target.closest('[data-sune-id]');if(!btn)return;const id=btn.getAttribute('data-sune-id');if(id){if(state.busy){state.controller?.disconnect?.();setBtnSend();state.busy=false;state.controller=null};SUNE.setActive(id);renderSidebar();await reflectActiveSune();state.currentThreadId=null;clearChat();document.getElementById('sidebarLeft').classList.add('-translate-x-full');document.getElementById('sidebarOverlayLeft').classList.add('hidden')}})
 $(el.sunePopover).on('click',async e=>{const act=e.target.closest('[data-action]')?.getAttribute('data-action');if(!act||!menuSuneId)return;const s=SUNE.get(menuSuneId);if(!s)return;const updateAndRender=async()=>{s.updatedAt=Date.now();SUNE.save();renderSidebar();await reflectActiveSune();markLocalDirty()};if(act==='pin'){s.pinned=!s.pinned;await updateAndRender()}else if(act==='rename'){const n=prompt('Rename sune to:',s.name);if(n!=null){s.name=n.trim();await updateAndRender()}}else if(act==='pfp'){const i=document.createElement('input');i.type='file';i.accept='image/*';i.onchange=async()=>{const f=i.files?.[0];if(!f)return;try{s.avatar=await imgToWebp(f);await updateAndRender()}catch{}};i.click()}else if(act==='export')dl(`sune-${(s.name||'sune').replace(/\W/g,'_')}-${ts()}.sune`,[s]);hideSunePopover()})
-$(el.suneSyncUploadBtn).on('click',()=>{hideSuneSyncPopover();performSuneUpload()});
-$(el.suneSyncDownloadBtn).on('click',()=>{hideSuneSyncPopover();performSuneDownload(false)});
+$(el.sunesSyncUploadBtn).on('click',()=>{hideSunesSyncPopover();performSuneUpload()});
+$(el.sunesSyncDownloadBtn).on('click',()=>{hideSunesSyncPopover();performSuneDownload(false)});
 function updateAttachBadge(){const n=state.attachments.length;el.attachBadge.textContent=String(n);el.attachBadge.classList.toggle('hidden',n===0)}
 $(el.attachBtn).on('click',()=>{if(state.busy)return;if(state.attachments.length){state.attachments=[];updateAttachBadge();el.fileInput.value=''};el.fileInput.click()})
 $(el.fileInput).on('change',async()=>{const files=[...(el.fileInput.files||[])];if(!files.length)return;for(const f of files){const at=await toAttach(f).catch(()=>null);if(at)state.attachments.push(at)}updateAttachBadge()})
@@ -185,8 +187,8 @@ USER.logMany = async msgs => {
 };
 
 async function init(){gcStorage();const u=localStorage.getItem('thread_repo_url')||'',suR=localStorage.getItem('sune_repo_url')||'';el.threadRepoInput.value=u;el.suneRepoInput.value=suR;el.threadFolderBtn.classList.toggle('hidden',!u.startsWith('gh://'));el.threadBackBtn.classList.toggle('hidden',!u.startsWith('gh://')||u.split('/').length<=3);await THREAD.load();await renderThreads();await Promise.allSettled(STICKY_SUNES.map(s=>SUNE.fetchDotSune(s)));renderSidebar();renderUserUI();await reflectActiveSune();if(suR.startsWith('gh://'))checkSuneSyncStatus();clearChat();icons();kbBind();kbUpdate()}
-$(window).on('resize',()=>{hideThreadPopover();hideSunePopover();hideSuneSyncPopover()})
-$(document).on('click',e=>{if(el.suneSyncPopover&&!el.suneSyncPopover.classList.contains('hidden')&&!el.suneSyncPopover.contains(e.target)&&!el.suneSyncBtn.contains(e.target))hideSuneSyncPopover()});
+$(window).on('resize',()=>{hideThreadPopover();hideSunePopover();hideSunesSyncPopover()})
+$(document).on('click',e=>{if(el.sunesSyncPopover&&!el.sunesSyncPopover.classList.contains('hidden')&&!el.sunesSyncPopover.contains(e.target)&&!el.suneSyncBtn.contains(e.target))hideSunesSyncPopover()});
 const htmlTabs={index:['htmlTab_index','htmlEditor'],extension:['htmlTab_extension','extensionHtmlEditor']};function showHtmlTab(key){Object.entries(htmlTabs).forEach(([k,[tb,pn]])=>{const a=k===key;el[tb].classList.toggle('border-black',a);el[tb].classList.toggle('border-transparent',!a);el[tb].classList.toggle('hover:border-gray-300',!a);el[pn].classList.toggle('hidden',!a)})}
 el.htmlTab_index.textContent='index.html';el.htmlTab_extension.textContent='extension.html';
 el.htmlTab_index.onclick=()=>showHtmlTab('index');el.htmlTab_extension.onclick=()=>showHtmlTab('extension');
@@ -251,11 +253,12 @@ const performSuneDownload=async(isAuto=false,prefData=null,prefSha=null)=>{
       if(Array.isArray(data.sunes)){
         sunes=data.sunes.map(makeSune);
         su.save(sunes);
-        if(data.activeId)SUNE.setActive(data.activeId);
+        const nextActive=data.activeId||(sunes.some(s=>s.id===su.getActiveId())?su.getActiveId():sunes[0]?.id);
+        if(nextActive)SUNE.setActive(nextActive);
       }
       if(data.storage&&typeof data.storage==='object'){
-        Object.keys(localStorage).forEach(k=>{if(k.startsWith('sune_'))localStorage.removeItem(k)});
-        Object.entries(data.storage).forEach(([k,v])=>localStorage.setItem(k,v));
+        Object.keys(localStorage).forEach(k=>{if(isSuneStorageKey(k))localStorage.removeItem(k)});
+        Object.entries(data.storage).forEach(([k,v])=>{if(isSuneStorageKey(k))localStorage.setItem(k,v)});
       }
       setLocalSunesUpdatedAt(num(data.updatedAt,Date.now()));
       remoteSha=sha;
@@ -280,7 +283,6 @@ const performSuneUpload=async()=>{
   const info=parseGhUrl(u);
   try{
     const now=Date.now();
-    setLocalSunesUpdatedAt(now);
     const data={version:1,updatedAt:now,sunes:SUNE.list,activeId:SUNE.id,storage:{}};
     SUNE.list.forEach(s=>{
       const p=`sune_${s.id}_`;
@@ -293,6 +295,7 @@ const performSuneUpload=async()=>{
       branch:info.branch,
       sha:x?.sha
     });
+    setLocalSunesUpdatedAt(now);
     remoteSha=res?.content?.sha||null;
     setSuneSyncStatus('synced');
     alert('Sunes pushed.');
@@ -310,7 +313,7 @@ $(el.suneSyncBtn).on('click',e=>{
   e.stopPropagation();
   const u=el.suneRepoInput.value.trim();
   if(!u.startsWith('gh://'))return;
-  showSuneSyncPopover(el.suneSyncBtn);
+  showSunesSyncPopover(el.suneSyncBtn);
 });
 $(el.sidebarBtnLeft).on('click',()=>{
   if(el.suneRepoInput.value.trim().startsWith('gh://'))checkSuneSyncStatus();
@@ -343,4 +346,4 @@ const getActiveJar=()=>!el.htmlEditor.classList.contains('hidden')?jars.html:jar
 $(el.copyHTML).on('click',async()=>{const jar=getActiveJar();await copyToClipboard(jar?jar.toString():'')})
 $(el.pasteHTML).on('click',async()=>{try{const t=await navigator.clipboard.readText();const jar=getActiveJar();if(jar)jar.updateCode(t)}catch{}})
 
-Object.assign(window,{icons,haptic,clamp,num,int,gid,esc,positionPopover,sid,fmtSize,asDataURL,b64,makeSune,getModelShort,resolveSuneSrc,processSuneIncludes,renderSuneHTML,reflectActiveSune,suneRow,renderUserUI,enhanceCodeBlocks,getSuneLabel,_createMessageRow,msgRow,partsToText,copyToClipboard,addSuneBubbleStreaming,clearChat,payloadWithSampling,setBtnStop,setBtnSend,localDemoReply,titleFrom,serializeThreadName,deserializeThreadName,ensureThreadOnFirstUser,generateTitleWithAI,threadRow,renderThreads,hideThreadPopover,showThreadPopover,hideSunePopover,showSunePopover,hideSuneSyncPopover,showSuneSyncPopover,setSuneSyncStatus,checkSuneSyncStatus,performSuneDownload,performSuneUpload,updateAttachBadge,toAttach,ensureJars,openSettings,closeSettings,showTab,dl,ts,kbUpdate,kbBind,activeMeta,init,showHtmlTab,showAccountTab,openAccountSettings,closeAccountSettings,getBubbleById,syncActiveThread,syncWhileBusy,onForeground,getActiveJar,imgToWebp,cacheStore,ghApi,parseGhUrl,ghGetFileContent,pullThreads,suneStorage,gcStorage,cleanSuneStorage});
+Object.assign(window,{icons,haptic,clamp,num,int,gid,esc,positionPopover,sid,fmtSize,asDataURL,b64,makeSune,getModelShort,resolveSuneSrc,processSuneIncludes,renderSuneHTML,reflectActiveSune,suneRow,renderUserUI,enhanceCodeBlocks,getSuneLabel,_createMessageRow,msgRow,partsToText,copyToClipboard,addSuneBubbleStreaming,clearChat,payloadWithSampling,setBtnStop,setBtnSend,localDemoReply,titleFrom,serializeThreadName,deserializeThreadName,ensureThreadOnFirstUser,generateTitleWithAI,threadRow,renderThreads,hideThreadPopover,showThreadPopover,hideSunePopover,showSunePopover,hideSuneSyncPopover,showSuneSyncPopover,hideSunesSyncPopover,showSunesSyncPopover,setSuneSyncStatus,checkSuneSyncStatus,performSuneDownload,performSuneUpload,updateAttachBadge,toAttach,ensureJars,openSettings,closeSettings,showTab,dl,ts,kbUpdate,kbBind,activeMeta,init,showHtmlTab,showAccountTab,openAccountSettings,closeAccountSettings,getBubbleById,syncActiveThread,syncWhileBusy,onForeground,getActiveJar,imgToWebp,cacheStore,ghApi,parseGhUrl,ghGetFileContent,pullThreads,suneStorage,gcStorage,cleanSuneStorage});
