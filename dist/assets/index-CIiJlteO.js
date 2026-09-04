@@ -326,7 +326,11 @@ var el = window.el = Object.fromEntries([
 	"threadFolderBtn",
 	"threadSyncBtn",
 	"suneRepoInput",
-	"suneSyncBtn"
+	"suneSyncBtn",
+	"suneSyncBadge",
+	"suneSyncPopover",
+	"suneSyncUploadBtn",
+	"suneSyncDownloadBtn"
 ].map((id) => [id, document.getElementById(id)]));
 //#endregion
 //#region src/utils.js
@@ -883,6 +887,7 @@ var SYSTEM_KEYS = new Set([
 	"active_sune_id",
 	"thread_repo_url",
 	"sune_repo_url",
+	"sunes_updated_at",
 	"user_name",
 	"user_avatar",
 	"provider",
@@ -914,6 +919,48 @@ var cleanSuneStorage = (id) => {
 		if (k.startsWith(p)) localStorage.removeItem(k);
 	});
 };
+var isSyncPulling = false;
+var getLocalSunesUpdatedAt = () => num(localStorage.getItem("sunes_updated_at"), 0);
+var setLocalSunesUpdatedAt = (ts = Date.now()) => localStorage.setItem("sunes_updated_at", ts);
+var markLocalDirty = () => {
+	if (isSyncPulling) return;
+	setLocalSunesUpdatedAt();
+	setSuneSyncStatus("desynced");
+};
+var _origSetItem = localStorage.setItem.bind(localStorage), _origRemoveItem = localStorage.removeItem.bind(localStorage);
+localStorage.setItem = (k, v) => {
+	_origSetItem(k, v);
+	if (!isSyncPulling && k.startsWith("sune_")) markLocalDirty();
+};
+localStorage.removeItem = (k) => {
+	_origRemoveItem(k);
+	if (!isSyncPulling && k.startsWith("sune_")) markLocalDirty();
+};
+function setSuneSyncStatus(status) {
+	const b = el.suneSyncBadge;
+	if (!b) return;
+	if (!(el.suneRepoInput?.value || "").trim().startsWith("gh://")) {
+		b.className = "hidden";
+		return;
+	}
+	b.className = "absolute -top-1 -right-1 block h-2.5 w-2.5 rounded-full ring-2 ring-white";
+	switch (status) {
+		case "checking":
+			b.classList.add("bg-blue-500", "animate-pulse");
+			break;
+		case "synced":
+			b.classList.add("bg-green-500");
+			break;
+		case "desynced":
+			b.classList.add("bg-amber-500");
+			break;
+		case "error":
+			b.classList.add("bg-red-500");
+			break;
+		default: b.classList.add("bg-gray-400");
+	}
+	el.suneSyncBtn?.querySelector("svg")?.classList.toggle("animate-spin", status === "checking");
+}
 var suneStorage = {
 	get(k, def = null) {
 		const id = SUNE.id;
@@ -1017,6 +1064,7 @@ var SUNE = window.SUNE = new Proxy({
 		const s = makeSune(p);
 		sunes.unshift(s);
 		su.save(sunes);
+		markLocalDirty();
 		return s;
 	},
 	delete(id) {
@@ -1025,6 +1073,7 @@ var SUNE = window.SUNE = new Proxy({
 		su.save(sunes);
 		cleanSuneStorage(id);
 		gcStorage();
+		markLocalDirty();
 		if (sunes.length === 0) {
 			const def = this.create({ name: "Default" });
 			this.setActive(def.id);
@@ -1163,6 +1212,7 @@ var SUNE = window.SUNE = new Proxy({
 			target[p] = value;
 			sunes[i].updatedAt = Date.now();
 			su.save(sunes);
+			markLocalDirty();
 		}
 		return true;
 	}
@@ -1445,6 +1495,14 @@ function showSunePopover(btn, id) {
 	positionPopover(btn, el.sunePopover);
 	icons();
 }
+var hideSuneSyncPopover = () => {
+	el.suneSyncPopover.classList.add("hidden");
+};
+function showSuneSyncPopover(btn) {
+	el.suneSyncPopover.classList.remove("hidden");
+	positionPopover(btn || el.suneSyncBtn, el.suneSyncPopover);
+	icons();
+}
 $(el.threadList).on("click", async (e) => {
 	const openBtn = e.target.closest("[data-open-thread]"), menuBtn = e.target.closest("[data-thread-menu]");
 	if (openBtn) {
@@ -1635,6 +1693,7 @@ $(el.sunePopover).on("click", async (e) => {
 		SUNE.save();
 		renderSidebar();
 		await reflectActiveSune();
+		markLocalDirty();
 	};
 	if (act === "pin") {
 		s.pinned = !s.pinned;
@@ -1660,6 +1719,14 @@ $(el.sunePopover).on("click", async (e) => {
 		i.click();
 	} else if (act === "export") dl(`sune-${(s.name || "sune").replace(/\W/g, "_")}-${ts()}.sune`, [s]);
 	hideSunePopover();
+});
+$(el.suneSyncUploadBtn).on("click", () => {
+	hideSuneSyncPopover();
+	performSuneUpload();
+});
+$(el.suneSyncDownloadBtn).on("click", () => {
+	hideSuneSyncPopover();
+	performSuneDownload(false);
 });
 function updateAttachBadge() {
 	const n = state.attachments.length;
@@ -2050,6 +2117,7 @@ async function init() {
 	renderSidebar();
 	renderUserUI();
 	await reflectActiveSune();
+	if (suR.startsWith("gh://")) checkSuneSyncStatus();
 	clearChat();
 	icons();
 	kbBind();
@@ -2058,6 +2126,10 @@ async function init() {
 $(window).on("resize", () => {
 	hideThreadPopover();
 	hideSunePopover();
+	hideSuneSyncPopover();
+});
+$(document).on("click", (e) => {
+	if (el.suneSyncPopover && !el.suneSyncPopover.classList.contains("hidden") && !el.suneSyncPopover.contains(e.target) && !el.suneSyncBtn.contains(e.target)) hideSuneSyncPopover();
 });
 var htmlTabs = {
 	index: ["htmlTab_index", "htmlEditor"],
@@ -2218,52 +2290,134 @@ $(el.threadSyncBtn).on("click", async () => {
 		alert("Sync failed: " + e.message);
 	}
 });
-$(el.suneRepoInput).on("change", () => {
-	localStorage.setItem("sune_repo_url", el.suneRepoInput.value.trim());
-});
-$(el.suneSyncBtn).on("click", async () => {
+var suneSyncBusy = false;
+var checkSuneSyncStatus = async () => {
+	const u = el.suneRepoInput.value.trim();
+	if (!u.startsWith("gh://")) return setSuneSyncStatus("idle");
+	if (suneSyncBusy) return;
+	suneSyncBusy = true;
+	setSuneSyncStatus("checking");
+	const info = parseGhUrl(u);
+	try {
+		const res = await ghApi(`${info.apiPath}/sunes.json?ref=${info.branch}`);
+		if (!res) return setSuneSyncStatus("desynced");
+		res.sha;
+		let remoteData = null;
+		if (res.content && res.encoding === "base64") try {
+			remoteData = JSON.parse(btou(res.content));
+		} catch {}
+		if (!remoteData && res.sha) {
+			const text = await ghGetFileContent(info, "sunes.json");
+			if (text) try {
+				remoteData = JSON.parse(text);
+			} catch {}
+		}
+		if (!remoteData) return setSuneSyncStatus("error");
+		const diff = num(remoteData.updatedAt, 0) - getLocalSunesUpdatedAt();
+		if (diff > 1e4) await performSuneDownload(true, remoteData, res.sha);
+		else if (diff < -1e4) setSuneSyncStatus("desynced");
+		else setSuneSyncStatus("synced");
+	} catch {
+		setSuneSyncStatus("error");
+	} finally {
+		suneSyncBusy = false;
+	}
+};
+var performSuneDownload = async (isAuto = false, prefData = null, prefSha = null) => {
 	const u = el.suneRepoInput.value.trim();
 	if (!u.startsWith("gh://")) return;
-	const mode = confirm("Sync Sunes:\nOK = Upload (Push)\nCancel = Download (Pull)"), info = parseGhUrl(u);
+	if (!isAuto && !confirm("Overwrite local sunes with remote version from GitHub?")) return;
+	setSuneSyncStatus("checking");
+	const info = parseGhUrl(u);
 	try {
-		if (mode) {
-			const data = {
-				version: 1,
-				sunes: SUNE.list,
-				activeId: SUNE.id,
-				storage: {}
-			};
-			SUNE.list.forEach((s) => {
-				const p = `sune_${s.id}_`;
-				Object.keys(localStorage).forEach((k) => {
-					if (k.startsWith(p)) data.storage[k] = localStorage.getItem(k);
-				});
-			});
-			const x = await ghApi(`${info.apiPath}/sunes.json?ref=${info.branch}`);
-			await ghApi(`${info.apiPath}/sunes.json`, "PUT", {
-				message: "Sync Sunes",
-				content: utob(JSON.stringify(data, null, 2)),
-				branch: info.branch,
-				sha: x?.sha
-			});
-			alert("Sunes pushed.");
-		} else {
-			const text = await ghGetFileContent(info, "sunes.json");
-			if (!text) throw new Error("sunes.json not found");
-			const data = JSON.parse(text);
-			if (data.sunes) {
+		let data = prefData;
+		if (!data) {
+			const res = await ghApi(`${info.apiPath}/sunes.json?ref=${info.branch}`);
+			if (!res) throw new Error("sunes.json not found");
+			res.sha;
+			if (res.content && res.encoding === "base64") try {
+				data = JSON.parse(btou(res.content));
+			} catch {}
+			if (!data) {
+				const text = await ghGetFileContent(info, "sunes.json");
+				if (!text) throw new Error("Could not read sunes.json");
+				data = JSON.parse(text);
+			}
+		}
+		if (!data) throw new Error("Invalid data");
+		isSyncPulling = true;
+		try {
+			if (Array.isArray(data.sunes)) {
 				sunes = data.sunes.map(makeSune);
-				SUNE.save();
+				su.save(sunes);
 				if (data.activeId) SUNE.setActive(data.activeId);
 			}
-			if (data.storage) Object.entries(data.storage).forEach(([k, v]) => localStorage.setItem(k, v));
-			renderSidebar();
-			await reflectActiveSune();
-			alert("Sunes pulled.");
+			if (data.storage && typeof data.storage === "object") {
+				Object.keys(localStorage).forEach((k) => {
+					if (k.startsWith("sune_")) localStorage.removeItem(k);
+				});
+				Object.entries(data.storage).forEach(([k, v]) => localStorage.setItem(k, v));
+			}
+			setLocalSunesUpdatedAt(num(data.updatedAt, Date.now()));
+		} finally {
+			isSyncPulling = false;
 		}
+		renderSidebar();
+		await reflectActiveSune();
+		setSuneSyncStatus("synced");
+		if (!isAuto) alert("Sunes pulled.");
 	} catch (e) {
-		alert("Sync failed: " + e.message);
+		setSuneSyncStatus("error");
+		if (!isAuto) alert("Pull failed: " + e.message);
 	}
+};
+var performSuneUpload = async () => {
+	const u = el.suneRepoInput.value.trim();
+	if (!u.startsWith("gh://")) return;
+	if (!confirm("Overwrite remote file on GitHub with local version?")) return;
+	setSuneSyncStatus("checking");
+	const info = parseGhUrl(u);
+	try {
+		const now = Date.now();
+		setLocalSunesUpdatedAt(now);
+		const data = {
+			version: 1,
+			updatedAt: now,
+			sunes: SUNE.list,
+			activeId: SUNE.id,
+			storage: {}
+		};
+		SUNE.list.forEach((s) => {
+			const p = `sune_${s.id}_`;
+			Object.keys(localStorage).forEach((k) => {
+				if (k.startsWith(p)) data.storage[k] = localStorage.getItem(k);
+			});
+		});
+		const x = await ghApi(`${info.apiPath}/sunes.json?ref=${info.branch}`);
+		(await ghApi(`${info.apiPath}/sunes.json`, "PUT", {
+			message: "Sync Sunes",
+			content: utob(JSON.stringify(data, null, 2)),
+			branch: info.branch,
+			sha: x?.sha
+		}))?.content?.sha;
+		setSuneSyncStatus("synced");
+		alert("Sunes pushed.");
+	} catch (e) {
+		setSuneSyncStatus("error");
+		alert("Push failed: " + e.message);
+	}
+};
+$(el.suneRepoInput).on("change", () => {
+	localStorage.setItem("sune_repo_url", el.suneRepoInput.value.trim());
+	checkSuneSyncStatus();
+});
+$(el.suneSyncBtn).on("click", (e) => {
+	e.stopPropagation();
+	if (!el.suneRepoInput.value.trim().startsWith("gh://")) return;
+	showSuneSyncPopover(el.suneSyncBtn);
+});
+$(el.sidebarBtnLeft).on("click", () => {
+	if (el.suneRepoInput.value.trim().startsWith("gh://")) checkSuneSyncStatus();
 });
 init();
 var accountTabs = {
@@ -2581,6 +2735,12 @@ Object.assign(window, {
 	showThreadPopover,
 	hideSunePopover,
 	showSunePopover,
+	hideSuneSyncPopover,
+	showSuneSyncPopover,
+	setSuneSyncStatus,
+	checkSuneSyncStatus,
+	performSuneDownload,
+	performSuneUpload,
 	updateAttachBadge,
 	toAttach,
 	ensureJars,

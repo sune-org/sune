@@ -17,9 +17,34 @@ const DEFAULT_MODEL='openrouter/free'
 const icons=()=>window.lucide&&lucide.createIcons()
 const haptic=()=>/android/i.test(navigator.userAgent)&&navigator.vibrate?.(1)
 
-const SYSTEM_KEYS=new Set(['sunes_v1','active_sune_id','thread_repo_url','sune_repo_url','user_name','user_avatar','provider','openrouter_api_key','openai_api_key','google_api_key','claude_api_key','cloudflare_api_key','master_prompt','title_model','gh_token','custom_key_1'])
+const SYSTEM_KEYS=new Set(['sunes_v1','active_sune_id','thread_repo_url','sune_repo_url','sunes_updated_at','user_name','user_avatar','provider','openrouter_api_key','openai_api_key','google_api_key','claude_api_key','cloudflare_api_key','master_prompt','title_model','gh_token','custom_key_1'])
 const gcStorage=()=>{try{const alive=new Set(sunes.map(s=>s.id));Object.keys(localStorage).forEach(k=>{if(SYSTEM_KEYS.has(k)||/^(t_|rem_t_|rem_index_|localforage|threads_)/.test(k))return;const m=k.match(/^sune_([^_]+)_/);if(m&&alive.has(m[1]))return;localStorage.removeItem(k)})}catch{}}
 const cleanSuneStorage=id=>{if(!id)return;const p=`sune_${id}_`;Object.keys(localStorage).forEach(k=>{if(k.startsWith(p))localStorage.removeItem(k)})}
+
+let isSyncPulling=false,suneSyncStatus='idle',remoteSha=null;
+const getLocalSunesUpdatedAt=()=>num(localStorage.getItem('sunes_updated_at'),0);
+const setLocalSunesUpdatedAt=(ts=Date.now())=>localStorage.setItem('sunes_updated_at',ts);
+const markLocalDirty=()=>{if(isSyncPulling)return;setLocalSunesUpdatedAt();setSuneSyncStatus('desynced')};
+const _origSetItem=localStorage.setItem.bind(localStorage),_origRemoveItem=localStorage.removeItem.bind(localStorage);
+localStorage.setItem=(k,v)=>{_origSetItem(k,v);if(!isSyncPulling&&k.startsWith('sune_'))markLocalDirty()};
+localStorage.removeItem=k=>{_origRemoveItem(k);if(!isSyncPulling&&k.startsWith('sune_'))markLocalDirty()};
+
+function setSuneSyncStatus(status){
+  suneSyncStatus=status;
+  const b=el.suneSyncBadge;
+  if(!b)return;
+  const u=(el.suneRepoInput?.value||'').trim();
+  if(!u.startsWith('gh://')){b.className='hidden';return}
+  b.className='absolute -top-1 -right-1 block h-2.5 w-2.5 rounded-full ring-2 ring-white';
+  switch(status){
+    case 'checking':b.classList.add('bg-blue-500','animate-pulse');break;
+    case 'synced':b.classList.add('bg-green-500');break;
+    case 'desynced':b.classList.add('bg-amber-500');break;
+    case 'error':b.classList.add('bg-red-500');break;
+    default:b.classList.add('bg-gray-400');
+  }
+  el.suneSyncBtn?.querySelector('svg')?.classList.toggle('animate-spin',status==='checking');
+}
 
 const suneStorage={
   get(k,def=null){const id=SUNE.id;if(!id)return def;const v=localStorage.getItem(`sune_${id}_${k}`);if(v===null)return def;try{return JSON.parse(v)}catch{return v}},
@@ -34,7 +59,7 @@ const su={key:'sunes_v1',activeKey:'active_sune_id',load(){try{return JSON.parse
 const defaultSettings={model:DEFAULT_MODEL,temperature:'',top_p:'',top_k:'',frequency_penalty:'',repetition_penalty:'',min_p:'',top_a:'',verbosity:'',reasoning_effort:'default',system_prompt:'',html:'',extension_html:"<sune src='https://raw.githubusercontent.com/sune-org/store/refs/heads/main/sync.sune' private></sune>",hide_composer:false,include_thoughts:false,img_output:false,aspect_ratio:'1:1',image_size:'1K',ignore_master_prompt:false}
 const makeSune=(p={})=>({id:p.id||gid(),name:p.name?.trim()||'Default',pinned:!!p.pinned,avatar:p.avatar||'',url:p.url||'',updatedAt:p.updatedAt||Date.now(),settings:Object.assign({},defaultSettings,p.settings||{})})
 let sunes=(su.load()||[]).map(makeSune)
-const SUNE=window.SUNE=new Proxy({storage:suneStorage,get list(){return sunes},get id(){return su.getActiveId()},get active(){return sunes.find(a=>a.id===su.getActiveId())||sunes[0]},get:id=>sunes.find(s=>s.id===id),setActive:id=>su.setActiveId(id||''),create(p={}){const s=makeSune(p);sunes.unshift(s);su.save(sunes);return s},delete(id){const curId=this.id;sunes=sunes.filter(s=>s.id!==id);su.save(sunes);cleanSuneStorage(id);gcStorage();if(sunes.length===0){const def=this.create({name:'Default'});this.setActive(def.id)}else if(curId===id)this.setActive(sunes[0].id)},save:()=>su.save(sunes)},{get(t,p){if(p==='fetchDotSune')return async g=>{try{const u=g.startsWith('http')?g:(()=>{const[a,b]=g.split('@'),[c,d]=a.split('/'),[e,...f]=b.split('/');return`https://raw.githubusercontent.com/${c}/${d}/${e}/${f.join('/')}`})(),j=await(await fetch(u)).json(),l=sunes.length;sunes.unshift(...(Array.isArray(j)?j:j?.sunes||[]).filter(s=>s?.id&&!t.get(s.id)).map(s=>makeSune(s)));sunes.length>l&&t.save()}catch{}};if(p==='attach')return async files=>{const arr=[];for(const f of files||[])arr.push(await toAttach(f));const clean=arr.filter(Boolean);if(!clean.length)return;await ensureThreadOnFirstUser('(attachments)');addMessage({role:'assistant',content:clean,...activeMeta()});await THREAD.persist()};if(p==='log')return async s=>{const t=String(s??'').trim();if(!t)return;await ensureThreadOnFirstUser(t);addMessage({role:'assistant',content:[{type:'text',text:t}],...activeMeta()});await THREAD.persist()};if(p==='lastReply')return [...state.messages].reverse().find(m=>m.role==='assistant');if(p==='infer')return async()=>{if(state.busy||!SUNE.model||state.abortRequested){state.abortRequested=false;return};await ensureThreadOnFirstUser('Sune Inference');const th=THREAD.active;if(th&&!th.title)(async()=>THREAD.setTitle(th.id,await generateTitleWithAI(state.messages)||'Sune Inference'))();state.busy=true;setBtnStop();const a=SUNE.active,suneMeta={sune_name:a.name,model:SUNE.model,avatar:a.avatar||''},streamId=sid(),suneBubble=addSuneBubbleStreaming(suneMeta,streamId);suneBubble.dataset.mid=streamId;suneBubble.innerHTML=SUNE_LOGO_SVG;const assistantMsg=Object.assign({id:streamId,role:'assistant',content:[{type:'text',text:''}]},suneMeta);state.messages.push(assistantMsg);THREAD.persist(false);state.stream={rid:null,bubble:null,meta:null,text:'',done:false};let buf='',completed=false;const onDelta=(delta,done,imgs)=>{if(imgs){if(!assistantMsg.images)assistantMsg.images=[];assistantMsg.images.push(...imgs)}buf+=delta;state.stream.text=buf;assistantMsg.content[0].text=buf;renderMarkdown(suneBubble,partsToText(assistantMsg),{enhance:false});if(done&&!completed){completed=true;setBtnSend();state.busy=false;enhanceCodeBlocks(suneBubble,true);THREAD.persist(true);el.composer.dispatchEvent(new CustomEvent('sune:newSuneResponse',{detail:{message:assistantMsg}}));state.stream={rid:null,bubble:null,meta:null,text:'',done:false}}else if(!done)THREAD.persist(false)};await streamChat(onDelta,streamId)};if(p==='getByName')return n=>sunes.find(s=>s.name.toLowerCase()===(n||'').trim().toLowerCase());if(p==='handoff')return async n=>{await new Promise(r=>setTimeout(r,4000));const s=sunes.find(s=>s.name.toLowerCase()===(n||'').trim().toLowerCase());if(!s)return;SUNE.setActive(s.id);renderSidebar();await reflectActiveSune();await SUNE.infer()};if(p in t)return t[p];const a=t.active;if(!a)return;if(p in a.settings)return a.settings[p];if(p in a)return a[p]},set(t,p,v){const a=t.active;if(!a)return false;const i=sunes.findIndex(s=>s.id===a.id);if(i<0)return false;const isTopLevel=/^(name|avatar|url|pinned)$/.test(p),target=isTopLevel?sunes[i]:sunes[i].settings;let value=v;if(!isTopLevel){if(p==='system_prompt')value=v||''}if(target[p]!==value){target[p]=value;sunes[i].updatedAt=Date.now();su.save(sunes)}return true}})
+const SUNE=window.SUNE=new Proxy({storage:suneStorage,get list(){return sunes},get id(){return su.getActiveId()},get active(){return sunes.find(a=>a.id===su.getActiveId())||sunes[0]},get:id=>sunes.find(s=>s.id===id),setActive:id=>su.setActiveId(id||''),create(p={}){const s=makeSune(p);sunes.unshift(s);su.save(sunes);markLocalDirty();return s},delete(id){const curId=this.id;sunes=sunes.filter(s=>s.id!==id);su.save(sunes);cleanSuneStorage(id);gcStorage();markLocalDirty();if(sunes.length===0){const def=this.create({name:'Default'});this.setActive(def.id)}else if(curId===id)this.setActive(sunes[0].id)},save:()=>su.save(sunes)},{get(t,p){if(p==='fetchDotSune')return async g=>{try{const u=g.startsWith('http')?g:(()=>{const[a,b]=g.split('@'),[c,d]=a.split('/'),[e,...f]=b.split('/');return`https://raw.githubusercontent.com/${c}/${d}/${e}/${f.join('/')}`})(),j=await(await fetch(u)).json(),l=sunes.length;sunes.unshift(...(Array.isArray(j)?j:j?.sunes||[]).filter(s=>s?.id&&!t.get(s.id)).map(s=>makeSune(s)));sunes.length>l&&t.save()}catch{}};if(p==='attach')return async files=>{const arr=[];for(const f of files||[])arr.push(await toAttach(f));const clean=arr.filter(Boolean);if(!clean.length)return;await ensureThreadOnFirstUser('(attachments)');addMessage({role:'assistant',content:clean,...activeMeta()});await THREAD.persist()};if(p==='log')return async s=>{const t=String(s??'').trim();if(!t)return;await ensureThreadOnFirstUser(t);addMessage({role:'assistant',content:[{type:'text',text:t}],...activeMeta()});await THREAD.persist()};if(p==='lastReply')return [...state.messages].reverse().find(m=>m.role==='assistant');if(p==='infer')return async()=>{if(state.busy||!SUNE.model||state.abortRequested){state.abortRequested=false;return};await ensureThreadOnFirstUser('Sune Inference');const th=THREAD.active;if(th&&!th.title)(async()=>THREAD.setTitle(th.id,await generateTitleWithAI(state.messages)||'Sune Inference'))();state.busy=true;setBtnStop();const a=SUNE.active,suneMeta={sune_name:a.name,model:SUNE.model,avatar:a.avatar||''},streamId=sid(),suneBubble=addSuneBubbleStreaming(suneMeta,streamId);suneBubble.dataset.mid=streamId;suneBubble.innerHTML=SUNE_LOGO_SVG;const assistantMsg=Object.assign({id:streamId,role:'assistant',content:[{type:'text',text:''}]},suneMeta);state.messages.push(assistantMsg);THREAD.persist(false);state.stream={rid:null,bubble:null,meta:null,text:'',done:false};let buf='',completed=false;const onDelta=(delta,done,imgs)=>{if(imgs){if(!assistantMsg.images)assistantMsg.images=[];assistantMsg.images.push(...imgs)}buf+=delta;state.stream.text=buf;assistantMsg.content[0].text=buf;renderMarkdown(suneBubble,partsToText(assistantMsg),{enhance:false});if(done&&!completed){completed=true;setBtnSend();state.busy=false;enhanceCodeBlocks(suneBubble,true);THREAD.persist(true);el.composer.dispatchEvent(new CustomEvent('sune:newSuneResponse',{detail:{message:assistantMsg}}));state.stream={rid:null,bubble:null,meta:null,text:'',done:false}}else if(!done)THREAD.persist(false)};await streamChat(onDelta,streamId)};if(p==='getByName')return n=>sunes.find(s=>s.name.toLowerCase()===(n||'').trim().toLowerCase());if(p==='handoff')return async n=>{await new Promise(r=>setTimeout(r,4000));const s=sunes.find(s=>s.name.toLowerCase()===(n||'').trim().toLowerCase());if(!s)return;SUNE.setActive(s.id);renderSidebar();await reflectActiveSune();await SUNE.infer()};if(p in t)return t[p];const a=t.active;if(!a)return;if(p in a.settings)return a.settings[p];if(p in a)return a[p]},set(t,p,v){const a=t.active;if(!a)return false;const i=sunes.findIndex(s=>s.id===a.id);if(i<0)return false;const isTopLevel=/^(name|avatar|url|pinned)$/.test(p),target=isTopLevel?sunes[i]:sunes[i].settings;let value=v;if(!isTopLevel){if(p==='system_prompt')value=v||''}if(target[p]!==value){target[p]=value;sunes[i].updatedAt=Date.now();su.save(sunes);markLocalDirty()}return true}})
 if(!sunes.length){const def=SUNE.create({name:'Default'});SUNE.setActive(def.id)}
 const state=window.state={messages:[],busy:false,controller:null,currentThreadId:null,abortRequested:false,attachments:[],stream:{rid:null,bubble:null,meta:null,text:'',done:false}}
 const getModelShort=m=>{const mm=m||SUNE.model||'';return mm.includes('/')?mm.split('/').pop():mm}
@@ -71,6 +96,8 @@ let menuThreadId=null;const hideThreadPopover=()=>{el.threadPopover.classList.ad
 function showThreadPopover(btn,id){menuThreadId=id;el.threadPopover.classList.remove('hidden');positionPopover(btn,el.threadPopover);icons()}
 let menuSuneId=null;const hideSunePopover=()=>{el.sunePopover.classList.add('hidden');menuSuneId=null}
 function showSunePopover(btn,id){menuSuneId=id;el.sunePopover.classList.remove('hidden');positionPopover(btn,el.sunePopover);icons()}
+const hideSuneSyncPopover=()=>{el.suneSyncPopover.classList.add('hidden')}
+function showSuneSyncPopover(btn){el.suneSyncPopover.classList.remove('hidden');positionPopover(btn||el.suneSyncBtn,el.suneSyncPopover);icons()}
 $(el.threadList).on('click',async e=>{const openBtn=e.target.closest('[data-open-thread]'),menuBtn=e.target.closest('[data-thread-menu]');if(openBtn){const id=openBtn.getAttribute('data-open-thread'),type=openBtn.getAttribute('data-type');if(type==='file'){const u=el.threadRepoInput.value.trim();if(u.startsWith('gh://')){const info=parseGhUrl(u);window.open(`https://github.com/${info.owner}/${info.repo}/blob/${info.branch}/${id}`,'_blank')}return}if(type==='folder'){const u=el.threadRepoInput.value.trim();el.threadRepoInput.value=u+(u.endsWith('/')?'':'/')+id;el.threadRepoInput.dispatchEvent(new Event('change'));return}if(id!==state.currentThreadId&&state.busy){state.controller?.disconnect?.();setBtnSend();state.busy=false;state.controller=null}const th=THREAD.get(id);if(!th)return;if(id===state.currentThreadId){el.sidebarRight.classList.add('translate-x-full');el.sidebarOverlayRight.classList.add('hidden');hideThreadPopover();return}state.currentThreadId=id;clearChat();const u=el.threadRepoInput.value.trim(),prefix=u.startsWith('gh://')?'rem_t_':'t_';let msgs=await localforage.getItem(prefix+id);if((!msgs||!Array.isArray(msgs)||!msgs.length)&&u.startsWith('gh://')){try{const info=parseGhUrl(u),fileName=serializeThreadName(th),text=await ghGetFileContent(info,fileName);if(text){try{msgs=JSON.parse(text);await localforage.setItem(prefix+id,msgs);th.status='synced';await THREAD.save()}catch(pe){console.error('[Sune] Thread JSON parse failed for',fileName,'len',text.length,pe)}}else{console.warn('[Sune] Remote thread returned no content:',fileName)}}catch(e){console.error('[Sune] Remote fetch failed',e)}}state.messages=Array.isArray(msgs)?[...msgs]:[];for(const m of state.messages){const b=msgRow(m);b.dataset.mid=m.id||'';renderMarkdown(b,partsToText(m))}await renderSuneHTML();syncWhileBusy();queueMicrotask(()=>el.chat.scrollTo({top:el.chat.scrollHeight,behavior:'smooth'}));el.sidebarRight.classList.add('translate-x-full');el.sidebarOverlayRight.classList.add('hidden');hideThreadPopover();return}if(menuBtn){e.stopPropagation();showThreadPopover(menuBtn,menuBtn.getAttribute('[data-thread-menu]')?menuBtn.getAttribute('[data-thread-menu]'):menuBtn.getAttribute('data-thread-menu'))}})
 $(el.threadList).on('scroll',()=>{
   if(isAddingThreads||el.threadList.scrollTop+el.threadList.clientHeight<el.threadList.scrollHeight-200)return;
@@ -86,7 +113,9 @@ $(el.threadList).on('scroll',()=>{
 });
 $(el.threadPopover).on('click',async e=>{const act=e.target.closest('[data-action]')?.getAttribute('data-action');if(!act||!menuThreadId)return;const th=THREAD.get(menuThreadId);if(!th)return;const u=el.threadRepoInput.value.trim(),prefix=u.startsWith('gh://')?'rem_t_':'t_';if(act==='pin'){th.pinned=!th.pinned;if(u.startsWith('gh://')&&th.status!=='new')th.status='modified'}else if(act==='rename'){const nv=prompt('Rename to:',th.title);if(nv!=null){th.title=titleFrom(nv);th.updatedAt=Date.now();if(u.startsWith('gh://')&&th.status!=='new')th.status='modified'}}else if(act==='duplicate'){const newId=gid(),msgs=await localforage.getItem(prefix+th.id)||[];const newTh={...th,id:newId,title:th.title+' (Copy)',updatedAt:Date.now()};if(u.startsWith('gh://'))newTh.status='new';THREAD.list.unshift(newTh);await localforage.setItem(prefix+newId,msgs);await THREAD.save();await renderThreads()}else if(act==='delete'){if(confirm('Delete this chat?')){if(u.startsWith('gh://')){th.status='deleted';th.updatedAt=Date.now()}else{THREAD.list=THREAD.list.filter(x=>!th.id!==th.id);await localforage.removeItem(prefix+th.id)}if(state.currentThreadId===th.id){state.currentThreadId=null;clearChat()}}}else if(act==='count_tokens'){const msgs=await localforage.getItem(prefix+th.id)||[];let totalChars=0;for(const m of msgs){if(!m||!m.role||m.role==='system')continue;totalChars+=String(partsToText(m)||'').length}const tokens=Math.max(0,Math.ceil(totalChars/4));const k=tokens>=1000?Math.round(tokens/1000)+'k':String(tokens);alert(tokens+' tokens ('+k+')')}else if(act==='export'){const msgs=await localforage.getItem(prefix+th.id)||[];dl(`thread-${(th.title||'thread').replace(/\W/g,'_')}-${ts()}.json`,{...th,messages:msgs})}else if(act==='copy_path'){const u=el.threadRepoInput.value.trim();if(u.startsWith('gh://')){const info=parseGhUrl(u);if(await copyToClipboard(`${info.owner}/${info.repo}@${info.branch}/${th.id}`))alert('Path copied.')}}hideThreadPopover();await THREAD.save();renderThreads()})
 $(el.suneList).on('click',async e=>{const menuBtn=e.target.closest('[data-sune-menu]');if(menuBtn){e.stopPropagation();showSunePopover(menuBtn,menuBtn.getAttribute('[data-sune-menu]')?menuBtn.getAttribute('[data-sune-menu]'):menuBtn.getAttribute('data-sune-menu'));return}const btn=e.target.closest('[data-sune-id]');if(!btn)return;const id=btn.getAttribute('data-sune-id');if(id){if(state.busy){state.controller?.disconnect?.();setBtnSend();state.busy=false;state.controller=null};SUNE.setActive(id);renderSidebar();await reflectActiveSune();state.currentThreadId=null;clearChat();document.getElementById('sidebarLeft').classList.add('-translate-x-full');document.getElementById('sidebarOverlayLeft').classList.add('hidden')}})
-$(el.sunePopover).on('click',async e=>{const act=e.target.closest('[data-action]')?.getAttribute('data-action');if(!act||!menuSuneId)return;const s=SUNE.get(menuSuneId);if(!s)return;const updateAndRender=async()=>{s.updatedAt=Date.now();SUNE.save();renderSidebar();await reflectActiveSune()};if(act==='pin'){s.pinned=!s.pinned;await updateAndRender()}else if(act==='rename'){const n=prompt('Rename sune to:',s.name);if(n!=null){s.name=n.trim();await updateAndRender()}}else if(act==='pfp'){const i=document.createElement('input');i.type='file';i.accept='image/*';i.onchange=async()=>{const f=i.files?.[0];if(!f)return;try{s.avatar=await imgToWebp(f);await updateAndRender()}catch{}};i.click()}else if(act==='export')dl(`sune-${(s.name||'sune').replace(/\W/g,'_')}-${ts()}.sune`,[s]);hideSunePopover()})
+$(el.sunePopover).on('click',async e=>{const act=e.target.closest('[data-action]')?.getAttribute('data-action');if(!act||!menuSuneId)return;const s=SUNE.get(menuSuneId);if(!s)return;const updateAndRender=async()=>{s.updatedAt=Date.now();SUNE.save();renderSidebar();await reflectActiveSune();markLocalDirty()};if(act==='pin'){s.pinned=!s.pinned;await updateAndRender()}else if(act==='rename'){const n=prompt('Rename sune to:',s.name);if(n!=null){s.name=n.trim();await updateAndRender()}}else if(act==='pfp'){const i=document.createElement('input');i.type='file';i.accept='image/*';i.onchange=async()=>{const f=i.files?.[0];if(!f)return;try{s.avatar=await imgToWebp(f);await updateAndRender()}catch{}};i.click()}else if(act==='export')dl(`sune-${(s.name||'sune').replace(/\W/g,'_')}-${ts()}.sune`,[s]);hideSunePopover()})
+$(el.suneSyncUploadBtn).on('click',()=>{hideSuneSyncPopover();performSuneUpload()});
+$(el.suneSyncDownloadBtn).on('click',()=>{hideSuneSyncPopover();performSuneDownload(false)});
 function updateAttachBadge(){const n=state.attachments.length;el.attachBadge.textContent=String(n);el.attachBadge.classList.toggle('hidden',n===0)}
 $(el.attachBtn).on('click',()=>{if(state.busy)return;if(state.attachments.length){state.attachments=[];updateAttachBadge();el.fileInput.value=''};el.fileInput.click()})
 $(el.fileInput).on('change',async()=>{const files=[...(el.fileInput.files||[])];if(!files.length)return;for(const f of files){const at=await toAttach(f).catch(()=>null);if(at)state.attachments.push(at)}updateAttachBadge()})
@@ -155,8 +184,9 @@ USER.logMany = async msgs => {
   await THREAD.persist();
 };
 
-async function init(){gcStorage();const u=localStorage.getItem('thread_repo_url')||'',suR=localStorage.getItem('sune_repo_url')||'';el.threadRepoInput.value=u;el.suneRepoInput.value=suR;el.threadFolderBtn.classList.toggle('hidden',!u.startsWith('gh://'));el.threadBackBtn.classList.toggle('hidden',!u.startsWith('gh://')||u.split('/').length<=3);await THREAD.load();await renderThreads();await Promise.allSettled(STICKY_SUNES.map(s=>SUNE.fetchDotSune(s)));renderSidebar();renderUserUI();await reflectActiveSune();clearChat();icons();kbBind();kbUpdate()}
-$(window).on('resize',()=>{hideThreadPopover();hideSunePopover()})
+async function init(){gcStorage();const u=localStorage.getItem('thread_repo_url')||'',suR=localStorage.getItem('sune_repo_url')||'';el.threadRepoInput.value=u;el.suneRepoInput.value=suR;el.threadFolderBtn.classList.toggle('hidden',!u.startsWith('gh://'));el.threadBackBtn.classList.toggle('hidden',!u.startsWith('gh://')||u.split('/').length<=3);await THREAD.load();await renderThreads();await Promise.allSettled(STICKY_SUNES.map(s=>SUNE.fetchDotSune(s)));renderSidebar();renderUserUI();await reflectActiveSune();if(suR.startsWith('gh://'))checkSuneSyncStatus();clearChat();icons();kbBind();kbUpdate()}
+$(window).on('resize',()=>{hideThreadPopover();hideSunePopover();hideSuneSyncPopover()})
+$(document).on('click',e=>{if(el.suneSyncPopover&&!el.suneSyncPopover.classList.contains('hidden')&&!el.suneSyncPopover.contains(e.target)&&!el.suneSyncBtn.contains(e.target))hideSuneSyncPopover()});
 const htmlTabs={index:['htmlTab_index','htmlEditor'],extension:['htmlTab_extension','extensionHtmlEditor']};function showHtmlTab(key){Object.entries(htmlTabs).forEach(([k,[tb,pn]])=>{const a=k===key;el[tb].classList.toggle('border-black',a);el[tb].classList.toggle('border-transparent',!a);el[tb].classList.toggle('hover:border-gray-300',!a);el[pn].classList.toggle('hidden',!a)})}
 el.htmlTab_index.textContent='index.html';el.htmlTab_extension.textContent='extension.html';
 el.htmlTab_index.onclick=()=>showHtmlTab('index');el.htmlTab_extension.onclick=()=>showHtmlTab('extension');
@@ -165,8 +195,126 @@ $(el.threadRepoInput).on('change',async()=>{const u=el.threadRepoInput.value.tri
 $(el.threadBackBtn).on('click',()=>{const u=el.threadRepoInput.value.trim();if(!u.startsWith('gh://'))return;const p=u.split('/');if(p.length>3){p.pop();el.threadRepoInput.value=p.join('/');el.threadRepoInput.dispatchEvent(new Event('change'))}});
 $(el.threadFolderBtn).on('click',async()=>{const n=prompt('Folder name:');if(!n)return;THREAD.list.unshift({id:n.trim(),title:n.trim(),type:'folder',updatedAt:Date.now()});await THREAD.save();await renderThreads()});
 $(el.threadSyncBtn).on('click',async()=>{const u=el.threadRepoInput.value.trim();if(!u.startsWith('gh://'))return;const mode=confirm('Sync Threads:\nOK = Upload (Push)\nCancel = Download (Pull)');const info=parseGhUrl(u);try{if(mode){const remoteItems=await ghApi(`${info.apiPath}?ref=${info.branch}`)||[],remoteMap={};remoteItems.forEach(i=>{const d=deserializeThreadName(i.name);if(d)remoteMap[d.id]={name:i.name,sha:i.sha}});const toRemove=[];for(const t of THREAD.list){if(t.status==='deleted'){if(remoteMap[t.id]){await ghApi(`${info.apiPath}/${remoteMap[t.id].name}`,'DELETE',{message:`Delete thread ${t.id}`,sha:remoteMap[t.id].sha,branch:info.branch});await localforage.removeItem('rem_t_'+t.id)}toRemove.push(t.id);continue}if(t.type!=='thread')continue;if(t.status==='modified'||t.status==='new'){const newName=serializeThreadName(t);let msgs=await localforage.getItem('rem_t_'+t.id);if((!msgs||!Array.isArray(msgs))&&remoteMap[t.id]){const text=await ghGetFileContent(info,remoteMap[t.id].name);if(text){try{msgs=JSON.parse(text);await localforage.setItem('rem_t_'+t.id,msgs)}catch(e){console.error(e)}}}if(remoteMap[t.id]&&remoteMap[t.id].name!==newName){await ghApi(`${info.apiPath}/${remoteMap[t.id].name}`,'DELETE',{message:`Rename thread ${t.id}`,sha:remoteMap[t.id].sha,branch:info.branch})}const x=await ghApi(`${info.apiPath}/${newName}?ref=${info.branch}`);await ghApi(`${info.apiPath}/${newName}`,'PUT',{message:`Sync thread ${t.id}`,content:utob(JSON.stringify(msgs||[],null,2)),branch:info.branch,sha:x?.sha});t.status='synced'}}THREAD.list=THREAD.list.filter(x=>!toRemove.includes(x.id));await THREAD.save();alert('Pushed to GitHub.')}else{await pullThreads();alert('Pulled from GitHub.')}await renderThreads()}catch(e){alert('Sync failed: '+e.message)}});
-$(el.suneRepoInput).on('change',()=>{localStorage.setItem('sune_repo_url',el.suneRepoInput.value.trim())});
-$(el.suneSyncBtn).on('click',async()=>{const u=el.suneRepoInput.value.trim();if(!u.startsWith('gh://'))return;const mode=confirm('Sync Sunes:\nOK = Upload (Push)\nCancel = Download (Pull)'),info=parseGhUrl(u);try{if(mode){const data={version:1,sunes:SUNE.list,activeId:SUNE.id,storage:{}};SUNE.list.forEach(s=>{const p=`sune_${s.id}_`;Object.keys(localStorage).forEach(k=>{if(k.startsWith(p))data.storage[k]=localStorage.getItem(k)})});const x=await ghApi(`${info.apiPath}/sunes.json?ref=${info.branch}`);await ghApi(`${info.apiPath}/sunes.json`,'PUT',{message:'Sync Sunes',content:utob(JSON.stringify(data,null,2)),branch:info.branch,sha:x?.sha});alert('Sunes pushed.')}else{const text=await ghGetFileContent(info,'sunes.json');if(!text)throw new Error('sunes.json not found');const data=JSON.parse(text);if(data.sunes){sunes=data.sunes.map(makeSune);SUNE.save();if(data.activeId)SUNE.setActive(data.activeId)}if(data.storage){Object.entries(data.storage).forEach(([k,v])=>localStorage.setItem(k,v))}renderSidebar();await reflectActiveSune();alert('Sunes pulled.')}}catch(e){alert('Sync failed: '+e.message)}});
+
+let suneSyncBusy=false;
+const checkSuneSyncStatus=async()=>{
+  const u=el.suneRepoInput.value.trim();
+  if(!u.startsWith('gh://'))return setSuneSyncStatus('idle');
+  if(suneSyncBusy)return;
+  suneSyncBusy=true;
+  setSuneSyncStatus('checking');
+  const info=parseGhUrl(u);
+  try{
+    const res=await ghApi(`${info.apiPath}/sunes.json?ref=${info.branch}`);
+    if(!res){remoteSha=null;return setSuneSyncStatus('desynced')}
+    remoteSha=res.sha;
+    let remoteData=null;
+    if(res.content&&res.encoding==='base64'){try{remoteData=JSON.parse(btou(res.content))}catch{}}
+    if(!remoteData&&res.sha){
+      const text=await ghGetFileContent(info,'sunes.json');
+      if(text){try{remoteData=JSON.parse(text)}catch{}}
+    }
+    if(!remoteData)return setSuneSyncStatus('error');
+    const remoteUp=num(remoteData.updatedAt,0),localUp=getLocalSunesUpdatedAt(),diff=remoteUp-localUp;
+    if(diff>10000)await performSuneDownload(true,remoteData,res.sha);
+    else if(diff<-10000)setSuneSyncStatus('desynced');
+    else setSuneSyncStatus('synced');
+  }catch{
+    setSuneSyncStatus('error');
+  }finally{
+    suneSyncBusy=false;
+  }
+};
+
+const performSuneDownload=async(isAuto=false,prefData=null,prefSha=null)=>{
+  const u=el.suneRepoInput.value.trim();
+  if(!u.startsWith('gh://'))return;
+  if(!isAuto&&!confirm('Overwrite local sunes with remote version from GitHub?'))return;
+  setSuneSyncStatus('checking');
+  const info=parseGhUrl(u);
+  try{
+    let data=prefData,sha=prefSha;
+    if(!data){
+      const res=await ghApi(`${info.apiPath}/sunes.json?ref=${info.branch}`);
+      if(!res)throw new Error('sunes.json not found');
+      sha=res.sha;
+      if(res.content&&res.encoding==='base64'){try{data=JSON.parse(btou(res.content))}catch{}}
+      if(!data){
+        const text=await ghGetFileContent(info,'sunes.json');
+        if(!text)throw new Error('Could not read sunes.json');
+        data=JSON.parse(text);
+      }
+    }
+    if(!data)throw new Error('Invalid data');
+    isSyncPulling=true;
+    try{
+      if(Array.isArray(data.sunes)){
+        sunes=data.sunes.map(makeSune);
+        su.save(sunes);
+        if(data.activeId)SUNE.setActive(data.activeId);
+      }
+      if(data.storage&&typeof data.storage==='object'){
+        Object.keys(localStorage).forEach(k=>{if(k.startsWith('sune_'))localStorage.removeItem(k)});
+        Object.entries(data.storage).forEach(([k,v])=>localStorage.setItem(k,v));
+      }
+      setLocalSunesUpdatedAt(num(data.updatedAt,Date.now()));
+      remoteSha=sha;
+    }finally{
+      isSyncPulling=false;
+    }
+    renderSidebar();
+    await reflectActiveSune();
+    setSuneSyncStatus('synced');
+    if(!isAuto)alert('Sunes pulled.');
+  }catch(e){
+    setSuneSyncStatus('error');
+    if(!isAuto)alert('Pull failed: '+e.message);
+  }
+};
+
+const performSuneUpload=async()=>{
+  const u=el.suneRepoInput.value.trim();
+  if(!u.startsWith('gh://'))return;
+  if(!confirm('Overwrite remote file on GitHub with local version?'))return;
+  setSuneSyncStatus('checking');
+  const info=parseGhUrl(u);
+  try{
+    const now=Date.now();
+    setLocalSunesUpdatedAt(now);
+    const data={version:1,updatedAt:now,sunes:SUNE.list,activeId:SUNE.id,storage:{}};
+    SUNE.list.forEach(s=>{
+      const p=`sune_${s.id}_`;
+      Object.keys(localStorage).forEach(k=>{if(k.startsWith(p))data.storage[k]=localStorage.getItem(k)});
+    });
+    const x=await ghApi(`${info.apiPath}/sunes.json?ref=${info.branch}`);
+    const res=await ghApi(`${info.apiPath}/sunes.json`,'PUT',{
+      message:'Sync Sunes',
+      content:utob(JSON.stringify(data,null,2)),
+      branch:info.branch,
+      sha:x?.sha
+    });
+    remoteSha=res?.content?.sha||null;
+    setSuneSyncStatus('synced');
+    alert('Sunes pushed.');
+  }catch(e){
+    setSuneSyncStatus('error');
+    alert('Push failed: '+e.message);
+  }
+};
+
+$(el.suneRepoInput).on('change',()=>{
+  localStorage.setItem('sune_repo_url',el.suneRepoInput.value.trim());
+  checkSuneSyncStatus();
+});
+$(el.suneSyncBtn).on('click',e=>{
+  e.stopPropagation();
+  const u=el.suneRepoInput.value.trim();
+  if(!u.startsWith('gh://'))return;
+  showSuneSyncPopover(el.suneSyncBtn);
+});
+$(el.sidebarBtnLeft).on('click',()=>{
+  if(el.suneRepoInput.value.trim().startsWith('gh://'))checkSuneSyncStatus();
+});
 init()
 const accountTabs={General:['accountTabGeneral','accountPanelGeneral'],API:['accountTabAPI','accountPanelAPI'],User:['accountTabUser','accountPanelUser']};function showAccountTab(key){Object.entries(accountTabs).forEach(([k,[tb,pn]])=>{el[tb].classList.toggle('border-black',k===key);el[pn].classList.toggle('hidden',k!==key)})}
 function openAccountSettings(){el.set_provider.value=USER.provider||'openrouter';el.set_api_key_or.value=USER.apiKeyOpenRouter||'';el.set_api_key_oai.value=USER.apiKeyOpenAI||'';el.set_api_key_g.value=USER.apiKeyGoogle||'';el.set_api_key_claude.value=USER.apiKeyClaude||'';el.set_api_key_cf.value=USER.apiKeyCloudflare||'';el.set_api_key_custom1.value=USER.customKey1||'';el.set_api_key_custom1.value=USER.customKey1||'';el.set_master_prompt.value=USER.masterPrompt||'';el.set_title_model.value=USER.titleModel;el.set_gh_token.value=USER.githubToken||'';el.set_user_name.value=USER.name;el.userAvatarPreview.src=USER.avatar||'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';el.userAvatarPreview.classList.toggle('bg-gray-200',!USER.avatar);showAccountTab('General');el.accountSettingsModal.classList.remove('hidden')}
@@ -195,4 +343,4 @@ const getActiveJar=()=>!el.htmlEditor.classList.contains('hidden')?jars.html:jar
 $(el.copyHTML).on('click',async()=>{const jar=getActiveJar();await copyToClipboard(jar?jar.toString():'')})
 $(el.pasteHTML).on('click',async()=>{try{const t=await navigator.clipboard.readText();const jar=getActiveJar();if(jar)jar.updateCode(t)}catch{}})
 
-Object.assign(window,{icons,haptic,clamp,num,int,gid,esc,positionPopover,sid,fmtSize,asDataURL,b64,makeSune,getModelShort,resolveSuneSrc,processSuneIncludes,renderSuneHTML,reflectActiveSune,suneRow,renderUserUI,enhanceCodeBlocks,getSuneLabel,_createMessageRow,msgRow,partsToText,copyToClipboard,addSuneBubbleStreaming,clearChat,payloadWithSampling,setBtnStop,setBtnSend,localDemoReply,titleFrom,serializeThreadName,deserializeThreadName,ensureThreadOnFirstUser,generateTitleWithAI,threadRow,renderThreads,hideThreadPopover,showThreadPopover,hideSunePopover,showSunePopover,updateAttachBadge,toAttach,ensureJars,openSettings,closeSettings,showTab,dl,ts,kbUpdate,kbBind,activeMeta,init,showHtmlTab,showAccountTab,openAccountSettings,closeAccountSettings,getBubbleById,syncActiveThread,syncWhileBusy,onForeground,getActiveJar,imgToWebp,cacheStore,ghApi,parseGhUrl,ghGetFileContent,pullThreads,suneStorage,gcStorage,cleanSuneStorage});
+Object.assign(window,{icons,haptic,clamp,num,int,gid,esc,positionPopover,sid,fmtSize,asDataURL,b64,makeSune,getModelShort,resolveSuneSrc,processSuneIncludes,renderSuneHTML,reflectActiveSune,suneRow,renderUserUI,enhanceCodeBlocks,getSuneLabel,_createMessageRow,msgRow,partsToText,copyToClipboard,addSuneBubbleStreaming,clearChat,payloadWithSampling,setBtnStop,setBtnSend,localDemoReply,titleFrom,serializeThreadName,deserializeThreadName,ensureThreadOnFirstUser,generateTitleWithAI,threadRow,renderThreads,hideThreadPopover,showThreadPopover,hideSunePopover,showSunePopover,hideSuneSyncPopover,showSuneSyncPopover,setSuneSyncStatus,checkSuneSyncStatus,performSuneDownload,performSuneUpload,updateAttachBadge,toAttach,ensureJars,openSettings,closeSettings,showTab,dl,ts,kbUpdate,kbBind,activeMeta,init,showHtmlTab,showAccountTab,openAccountSettings,closeAccountSettings,getBubbleById,syncActiveThread,syncWhileBusy,onForeground,getActiveJar,imgToWebp,cacheStore,ghApi,parseGhUrl,ghGetFileContent,pullThreads,suneStorage,gcStorage,cleanSuneStorage});
