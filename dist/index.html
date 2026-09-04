@@ -13,7 +13,7 @@
 <script defer src="//unpkg.com/alpinejs"></script>
 
 
-  <script type="module" crossorigin src="/assets/index-CFtWZ3ac.js"></script>
+  <script type="module" crossorigin src="/assets/index-CIiJlteO.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-DUC1RW1F.css">
 <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
 <body class="bg-white text-gray-900 selection:bg-black/10" x-data @click.window="if($event.target.closest('button')) haptic(); if(!document.getElementById('threadPopover').contains($event.target)&&!$event.target.closest('[data-thread-menu]')) hideThreadPopover(); if(!document.getElementById('sunePopover').contains($event.target)&&!$event.target.closest('[data-sune-menu]')) hideSunePopover(); if(!document.getElementById('userMenu').contains($event.target)&&!document.getElementById('userMenuBtn').contains($event.target)) document.getElementById('userMenu').classList.add('hidden')">
@@ -42,13 +42,13 @@
 </footer>
 
 </div>
-<div id="sidebarOverlayLeft" class="fixed inset-0 z-40 bg-black/20 hidden" @click="document.getElementById('sidebarLeft').classList.add('-translate-x-full');$el.classList.add('hidden');document.getElementById('sidebarRight').classList.add('translate-x-full');document.getElementById('sidebarOverlayRight').classList.add('hidden');hideThreadPopover();hideSunePopover()"></div>
+<div id="sidebarOverlayLeft" class="fixed inset-0 z-40 bg-black/20 hidden" @click="document.getElementById('sidebarLeft').classList.add('-translate-x-full');$el.classList.add('hidden');document.getElementById('sidebarRight').classList.add('translate-x-full');document.getElementById('sidebarOverlayRight').classList.add('hidden');hideThreadPopover();hideSunePopover();hideSuneSyncPopover()"></div>
 <aside id="sidebarLeft" class="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white border-r border-gray-200 shadow-xl transform -translate-x-full transition-transform duration-200 ease-out flex flex-col">
   <div class="p-2 border-b flex flex-col gap-2">
     <input id="suneRepoInput" type="text" placeholder="gh://owner/sunes" class="w-full h-9 rounded-lg border-0 bg-gray-100 px-3 text-xs font-mono focus:ring-2 focus:ring-black focus:bg-white"/>
     <div class="flex items-center justify-between gap-2">
       <button id="newSuneBtn" class="px-3 py-1.5 rounded-lg bg-black text-white text-[10px] font-bold uppercase tracking-wider hover:bg-black/90 transition">New Sune</button>
-      <button id="suneSyncBtn" class="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-900 text-[10px] font-bold uppercase tracking-wider hover:bg-gray-200 transition flex items-center gap-1"><i data-lucide="refresh-cw" class="h-3 w-3"></i><span>Sync</span></button>
+      <button id="suneSyncBtn" class="relative px-3 py-1.5 rounded-lg bg-gray-100 text-gray-900 text-[10px] font-bold uppercase tracking-wider hover:bg-gray-200 transition flex items-center gap-1"><i data-lucide="refresh-cw" class="h-3 w-3"></i><span>Sync</span><span id="suneSyncBadge" class="absolute -top-1 -right-1 block h-2.5 w-2.5 rounded-full ring-2 ring-white hidden"></span></button>
     </div>
   </div>
   <div id="suneList" class="flex-1 overflow-y-auto divide-y"></div>
@@ -93,6 +93,10 @@
   <button data-action="rename" class="menu-item"><i data-lucide="edit-3" class="h-4 w-4"></i><span>Rename</span></button>
   <button data-action="pfp" class="menu-item"><i data-lucide="image" class="h-4 w-4"></i><span>Change pfp</span></button>
   <button data-action="export" class="menu-item"><i data-lucide="download" class="h-4 w-4"></i><span>Export sune (.sune)</span></button>
+</div>
+<div id="suneSyncPopover" class="menu-card hidden">
+  <button id="suneSyncUploadBtn" class="menu-item"><i data-lucide="upload-cloud" class="h-4 w-4"></i><span>Upload to GitHub</span></button>
+  <button id="suneSyncDownloadBtn" class="menu-item"><i data-lucide="download-cloud" class="h-4 w-4"></i><span>Download from GitHub</span></button>
 </div>
 <div id="suneModal" class="hidden fixed inset-0 z-50">
   <div class="absolute inset-0 bg-black/30"></div>
