@@ -328,9 +328,9 @@ var el = window.el = Object.fromEntries([
 	"suneRepoInput",
 	"suneSyncBtn",
 	"suneSyncBadge",
-	"suneSyncPopover",
-	"suneSyncUploadBtn",
-	"suneSyncDownloadBtn"
+	"sunesSyncPopover",
+	"sunesSyncUploadBtn",
+	"sunesSyncDownloadBtn"
 ].map((id) => [id, document.getElementById(id)]));
 //#endregion
 //#region src/utils.js
@@ -927,14 +927,15 @@ var markLocalDirty = () => {
 	setLocalSunesUpdatedAt();
 	setSuneSyncStatus("desynced");
 };
+var isSuneStorageKey = (k) => !SYSTEM_KEYS.has(k) && /^sune_[^_]+_/.test(k);
 var _origSetItem = localStorage.setItem.bind(localStorage), _origRemoveItem = localStorage.removeItem.bind(localStorage);
 localStorage.setItem = (k, v) => {
 	_origSetItem(k, v);
-	if (!isSyncPulling && k.startsWith("sune_")) markLocalDirty();
+	if (!isSyncPulling && isSuneStorageKey(k)) markLocalDirty();
 };
 localStorage.removeItem = (k) => {
 	_origRemoveItem(k);
-	if (!isSyncPulling && k.startsWith("sune_")) markLocalDirty();
+	if (!isSyncPulling && isSuneStorageKey(k)) markLocalDirty();
 };
 function setSuneSyncStatus(status) {
 	const b = el.suneSyncBadge;
@@ -1495,14 +1496,15 @@ function showSunePopover(btn, id) {
 	positionPopover(btn, el.sunePopover);
 	icons();
 }
-var hideSuneSyncPopover = () => {
-	el.suneSyncPopover.classList.add("hidden");
-};
-function showSuneSyncPopover(btn) {
-	el.suneSyncPopover.classList.remove("hidden");
-	positionPopover(btn || el.suneSyncBtn, el.suneSyncPopover);
+var hideSunesSyncPopover = () => {
+	el.sunesSyncPopover.classList.add("hidden");
+}, hideSuneSyncPopover = hideSunesSyncPopover;
+function showSunesSyncPopover(btn) {
+	el.sunesSyncPopover.classList.remove("hidden");
+	positionPopover(btn || el.suneSyncBtn, el.sunesSyncPopover);
 	icons();
 }
+var showSuneSyncPopover = showSunesSyncPopover;
 $(el.threadList).on("click", async (e) => {
 	const openBtn = e.target.closest("[data-open-thread]"), menuBtn = e.target.closest("[data-thread-menu]");
 	if (openBtn) {
@@ -1720,12 +1722,12 @@ $(el.sunePopover).on("click", async (e) => {
 	} else if (act === "export") dl(`sune-${(s.name || "sune").replace(/\W/g, "_")}-${ts()}.sune`, [s]);
 	hideSunePopover();
 });
-$(el.suneSyncUploadBtn).on("click", () => {
-	hideSuneSyncPopover();
+$(el.sunesSyncUploadBtn).on("click", () => {
+	hideSunesSyncPopover();
 	performSuneUpload();
 });
-$(el.suneSyncDownloadBtn).on("click", () => {
-	hideSuneSyncPopover();
+$(el.sunesSyncDownloadBtn).on("click", () => {
+	hideSunesSyncPopover();
 	performSuneDownload(false);
 });
 function updateAttachBadge() {
@@ -2126,10 +2128,10 @@ async function init() {
 $(window).on("resize", () => {
 	hideThreadPopover();
 	hideSunePopover();
-	hideSuneSyncPopover();
+	hideSunesSyncPopover();
 });
 $(document).on("click", (e) => {
-	if (el.suneSyncPopover && !el.suneSyncPopover.classList.contains("hidden") && !el.suneSyncPopover.contains(e.target) && !el.suneSyncBtn.contains(e.target)) hideSuneSyncPopover();
+	if (el.sunesSyncPopover && !el.sunesSyncPopover.classList.contains("hidden") && !el.sunesSyncPopover.contains(e.target) && !el.suneSyncBtn.contains(e.target)) hideSunesSyncPopover();
 });
 var htmlTabs = {
 	index: ["htmlTab_index", "htmlEditor"],
@@ -2350,13 +2352,16 @@ var performSuneDownload = async (isAuto = false, prefData = null, prefSha = null
 			if (Array.isArray(data.sunes)) {
 				sunes = data.sunes.map(makeSune);
 				su.save(sunes);
-				if (data.activeId) SUNE.setActive(data.activeId);
+				const nextActive = data.activeId || (sunes.some((s) => s.id === su.getActiveId()) ? su.getActiveId() : sunes[0]?.id);
+				if (nextActive) SUNE.setActive(nextActive);
 			}
 			if (data.storage && typeof data.storage === "object") {
 				Object.keys(localStorage).forEach((k) => {
-					if (k.startsWith("sune_")) localStorage.removeItem(k);
+					if (isSuneStorageKey(k)) localStorage.removeItem(k);
 				});
-				Object.entries(data.storage).forEach(([k, v]) => localStorage.setItem(k, v));
+				Object.entries(data.storage).forEach(([k, v]) => {
+					if (isSuneStorageKey(k)) localStorage.setItem(k, v);
+				});
 			}
 			setLocalSunesUpdatedAt(num(data.updatedAt, Date.now()));
 		} finally {
@@ -2379,7 +2384,6 @@ var performSuneUpload = async () => {
 	const info = parseGhUrl(u);
 	try {
 		const now = Date.now();
-		setLocalSunesUpdatedAt(now);
 		const data = {
 			version: 1,
 			updatedAt: now,
@@ -2394,12 +2398,14 @@ var performSuneUpload = async () => {
 			});
 		});
 		const x = await ghApi(`${info.apiPath}/sunes.json?ref=${info.branch}`);
-		(await ghApi(`${info.apiPath}/sunes.json`, "PUT", {
+		const res = await ghApi(`${info.apiPath}/sunes.json`, "PUT", {
 			message: "Sync Sunes",
 			content: utob(JSON.stringify(data, null, 2)),
 			branch: info.branch,
 			sha: x?.sha
-		}))?.content?.sha;
+		});
+		setLocalSunesUpdatedAt(now);
+		res?.content?.sha;
 		setSuneSyncStatus("synced");
 		alert("Sunes pushed.");
 	} catch (e) {
@@ -2414,7 +2420,7 @@ $(el.suneRepoInput).on("change", () => {
 $(el.suneSyncBtn).on("click", (e) => {
 	e.stopPropagation();
 	if (!el.suneRepoInput.value.trim().startsWith("gh://")) return;
-	showSuneSyncPopover(el.suneSyncBtn);
+	showSunesSyncPopover(el.suneSyncBtn);
 });
 $(el.sidebarBtnLeft).on("click", () => {
 	if (el.suneRepoInput.value.trim().startsWith("gh://")) checkSuneSyncStatus();
@@ -2737,6 +2743,8 @@ Object.assign(window, {
 	showSunePopover,
 	hideSuneSyncPopover,
 	showSuneSyncPopover,
+	hideSunesSyncPopover,
+	showSunesSyncPopover,
 	setSuneSyncStatus,
 	checkSuneSyncStatus,
 	performSuneDownload,
