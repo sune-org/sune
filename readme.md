@@ -1,30 +1,31 @@
 [![Download For Android (.apk)](https://img.shields.io/badge/Download-For%20Android%20(.apk)-green?style=for-the-badge&logo=android)](https://github.com/multipleof4/sune/releases/download/v0.23.0/sune-v0.23.0.apk)
 
-![Main](./public/appstore_content/screenshot1.jpg)
+<p align="center">
+  <img src="./public/appstore_content/screenshot1.jpg" alt="Main" width="280" />
+</p>
 
 > Each sune is like a module. You can have many. And share them.
 
-![Sunes](./public/appstore_content/sune_sidebar.png)
-
-![Setting](./public/appstore_content/screenshot3.jpg)
+<p align="center">
+  <img src="./public/appstore_content/sune_sidebar.png" alt="Sunes" width="280" />
+  <img src="./public/appstore_content/screenshot3.jpg" alt="Setting" width="280" />
+</p>
 
 💠 New! 
 
 > You can have scripts which run on the page of each sune — either to function call or extend functionality of the app or sune.
 
-![Scripting](./public/appstore_content/screenshot4.jpg)
+<p align="center">
+  <img src="./public/appstore_content/screenshot4.jpg" alt="Scripting" width="280" />
+  <img src="./public/appstore_content/screenshot_miku.png" alt="Miku" width="280" />
+</p>
 
-> Image support.
+> There is a marketplace and LaTeX support out of the box.
 
-![Miku](./public/appstore_content/screenshot_miku.png)
-
-> There is a marketplace.
-
-![Marketplace](./public/appstore_content/screenshot_marketplace.jpg)
-
-> LaTeX support out of the box.
-
-![LaTeX](./public/appstore_content/latex.png)
+<p align="center">
+  <img src="./public/appstore_content/screenshot_marketplace.jpg" alt="Marketplace" width="280" />
+  <img src="./public/appstore_content/latex.png" alt="LaTeX" width="280" />
+</p>
 
 ---
 
@@ -32,7 +33,9 @@
 
 Never lose a conversation again. Sune can sync all your threads to a GitHub repo.
 
-![Sync](./public/appstore_content/sync.png)
+<p align="center">
+  <img src="./public/appstore_content/sync.png" alt="Sync" width="320" />
+</p>
 
 ### Setup for Syncing Chats
 
