@@ -1026,7 +1026,7 @@ var defaultSettings = {
 	min_p: "",
 	top_a: "",
 	max_tokens: "",
-	reasoning_effort: "default",
+	reasoning_effort: "",
 	system_prompt: "",
 	html: "",
 	extension_html: "<sune src='https://raw.githubusercontent.com/sune-org/store/refs/heads/main/sync.sune' private></sune>",
@@ -1866,7 +1866,7 @@ function openSettings() {
 	el.set_min_p.value = s.min_p;
 	el.set_top_a.value = s.top_a;
 	el.set_max_tokens.value = s.max_tokens || "";
-	el.set_reasoning_effort.value = s.reasoning_effort || "default";
+	el.set_reasoning_effort.value = s.reasoning_effort || "";
 	el.set_system_prompt.value = s.system_prompt;
 	el.set_hide_composer.checked = !!s.hide_composer;
 	el.set_img_output.checked = !!s.img_output;
@@ -1924,7 +1924,7 @@ $(el.settingsForm).on("submit", async (e) => {
 		"top_a",
 		"max_tokens"
 	].forEach((k) => SUNE[k] = el[`set_${k}`].value.trim());
-	SUNE.reasoning_effort = el.set_reasoning_effort.value || "default";
+	SUNE.reasoning_effort = el.set_reasoning_effort.value || "";
 	SUNE.system_prompt = el.set_system_prompt.value.trim();
 	SUNE.hide_composer = el.set_hide_composer.checked;
 	SUNE.img_output = el.set_img_output.checked;
