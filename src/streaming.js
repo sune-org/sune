@@ -38,7 +38,6 @@ export const buildBody=()=>{
 
   const b=payloadWithSampling({model:SUNE.model.replace(/^(or:|oai:|g:|cla:|cf:)/,''),messages:msgs,stream:true});
   b.reasoning={...(SUNE.reasoning_effort&&SUNE.reasoning_effort!=='default'?{effort:SUNE.reasoning_effort}:{}),exclude:!SUNE.include_thoughts};
-  if(SUNE.verbosity)b.verbosity=SUNE.verbosity;
   if(SUNE.img_output){b.modalities=['image'];b.image_config={aspect_ratio:SUNE.aspect_ratio||'1:1',image_size:SUNE.image_size||'1K'}}
   return b
 }

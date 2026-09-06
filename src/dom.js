@@ -3,7 +3,7 @@ export const el = window.el = Object.fromEntries(
     'topbar','chat','messages','composer','input','sendBtn','suneBtnTop','suneModal','suneURL',
     'settingsForm','closeSettings','cancelSettings','tabModel','tabPrompt','tabScript',
     'panelModel','panelPrompt','panelScript','set_model','set_temperature','set_top_p','set_top_k',
-    'set_frequency_penalty','set_repetition_penalty','set_min_p','set_top_a','set_verbosity',
+    'set_frequency_penalty','set_repetition_penalty','set_min_p','set_top_a','set_max_tokens',
     'set_reasoning_effort','set_system_prompt','set_hide_composer','set_include_thoughts',
     'set_img_output','set_aspect_ratio','set_image_size','aspectRatioContainer',
     'set_ignore_master_prompt','deleteSuneBtn','sidebarLeft','sidebarOverlayLeft','sidebarBtnLeft',
