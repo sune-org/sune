@@ -70,7 +70,6 @@ var buildBody = () => {
 		...SUNE.reasoning_effort && SUNE.reasoning_effort !== "default" ? { effort: SUNE.reasoning_effort } : {},
 		exclude: !SUNE.include_thoughts
 	};
-	if (SUNE.verbosity) b.verbosity = SUNE.verbosity;
 	if (SUNE.img_output) {
 		b.modalities = ["image"];
 		b.image_config = {
@@ -250,7 +249,7 @@ var el = window.el = Object.fromEntries([
 	"set_repetition_penalty",
 	"set_min_p",
 	"set_top_a",
-	"set_verbosity",
+	"set_max_tokens",
 	"set_reasoning_effort",
 	"set_system_prompt",
 	"set_hide_composer",
@@ -1026,7 +1025,7 @@ var defaultSettings = {
 	repetition_penalty: "",
 	min_p: "",
 	top_a: "",
-	verbosity: "",
+	max_tokens: "",
 	reasoning_effort: "default",
 	system_prompt: "",
 	html: "",
@@ -1341,7 +1340,8 @@ var payloadWithSampling = (b) => {
 		frequency_penalty: num(s.frequency_penalty, null),
 		repetition_penalty: num(s.repetition_penalty, null),
 		min_p: num(s.min_p, null),
-		top_a: num(s.top_a, null)
+		top_a: num(s.top_a, null),
+		max_tokens: int(s.max_tokens, null) > 0 ? int(s.max_tokens, null) : null
 	};
 	Object.keys(p).forEach((k) => {
 		const v = p[k];
@@ -1865,7 +1865,7 @@ function openSettings() {
 	el.set_repetition_penalty.value = s.repetition_penalty;
 	el.set_min_p.value = s.min_p;
 	el.set_top_a.value = s.top_a;
-	el.set_verbosity.value = s.verbosity || "";
+	el.set_max_tokens.value = s.max_tokens || "";
 	el.set_reasoning_effort.value = s.reasoning_effort || "default";
 	el.set_system_prompt.value = s.system_prompt;
 	el.set_hide_composer.checked = !!s.hide_composer;
@@ -1921,9 +1921,9 @@ $(el.settingsForm).on("submit", async (e) => {
 		"frequency_penalty",
 		"repetition_penalty",
 		"min_p",
-		"top_a"
+		"top_a",
+		"max_tokens"
 	].forEach((k) => SUNE[k] = el[`set_${k}`].value.trim());
-	SUNE.verbosity = el.set_verbosity.value || "";
 	SUNE.reasoning_effort = el.set_reasoning_effort.value || "default";
 	SUNE.system_prompt = el.set_system_prompt.value.trim();
 	SUNE.hide_composer = el.set_hide_composer.checked;
