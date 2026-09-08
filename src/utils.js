@@ -16,7 +16,7 @@ export const fmtSize = b => {
   return (x >= 10 ? Math.round(x) : Math.round(x * 10) / 10) + ' ' + u[i];
 };
 export const asDataURL = f => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(String(fr.result || '')); fr.readAsDataURL(f); });
-export const imgToWebp = (f, D = 128, q = 80) => new Promise((r, j) => {
+export const imgToWebp = (f, D = 96, q = 75) => new Promise((r, j) => {
   if (!f) return j();
   const i = new Image;
   i.onload = () => {
