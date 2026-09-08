@@ -371,7 +371,7 @@ var asDataURL = (f) => new Promise((r) => {
 	fr.onload = () => r(String(fr.result || ""));
 	fr.readAsDataURL(f);
 });
-var imgToWebp = (f, D = 128, q = 80) => new Promise((r, j) => {
+var imgToWebp = (f, D = 96, q = 75) => new Promise((r, j) => {
 	if (!f) return j();
 	const i = new Image();
 	i.onload = () => {
