@@ -1243,7 +1243,7 @@ var getModelShort = (m) => {
 var reflectActiveSune = async () => {
 	const a = SUNE.active;
 	el.suneBtnTop.title = `Settings — ${a.name}`;
-	el.suneBtnTop.innerHTML = a.avatar ? `<img src="${esc(a.avatar)}" alt="" class="h-9 w-9 rounded-full object-cover"/>` : "✺";
+	el.suneBtnTop.innerHTML = a.avatar ? `<img src="${esc(a.avatar)}" alt="" class="h-10 w-10 rounded-full object-cover"/>` : "✺";
 	el.footer.classList.toggle("hidden", !!a.settings.hide_composer);
 	await renderSuneHTML();
 	icons();
