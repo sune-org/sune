@@ -40,7 +40,8 @@ var buildBody = () => {
 		role: "system",
 		content: mPrompt
 	});
-	const sPrompt = (SUNE.system_prompt || "").trim();
+	const modelName = SUNE.model.replace(/^(or:|oai:|g:|cla:|cf:)/, "").replace(/^[^/]*\//, "").replace(/(?::online|:free)+$/, "");
+	const sPrompt = (SUNE.system_prompt || "").trim().replaceAll("{{model_name}}", () => modelName);
 	if (sPrompt) msgs.push({
 		role: "system",
 		content: sPrompt

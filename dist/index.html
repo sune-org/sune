@@ -13,7 +13,7 @@
 <script defer src="//unpkg.com/alpinejs"></script>
 
 
-  <script type="module" crossorigin src="/assets/index-DhMktBAg.js"></script>
+  <script type="module" crossorigin src="/assets/index-BXuoHvQB.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-DUC1RW1F.css">
 <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
 <body class="bg-white text-gray-900 selection:bg-black/10" x-data @click.window="if($event.target.closest('button')) haptic(); if(!document.getElementById('threadPopover').contains($event.target)&&!$event.target.closest('[data-thread-menu]')) hideThreadPopover(); if(!document.getElementById('sunePopover').contains($event.target)&&!$event.target.closest('[data-sune-menu]')) hideSunePopover(); if(!document.getElementById('userMenu').contains($event.target)&&!document.getElementById('userMenuBtn').contains($event.target)) document.getElementById('userMenu').classList.add('hidden')">
@@ -151,6 +151,7 @@
         </div>
         <div id="panelPrompt" class="p-4 space-y-4 hidden">
           <div><div class="flex items-center justify-between mb-1"><label for="set_system_prompt" class="block text-gray-700 font-medium">System Prompt</label><div class="flex gap-2"><button type="button" id="copySystemPrompt" class="px-2 py-1 text-xs rounded-md bg-gray-100 hover:bg-gray-200">Copy</button><button type="button" id="pasteSystemPrompt" class="px-2 py-1 text-xs rounded-md bg-gray-100 hover:bg-gray-200">Paste</button></div></div><textarea id="set_system_prompt" rows="8" class="w-full rounded-xl border border-gray-300 px-3 py-2" placeholder="Enter a system prompt to guide the sune"></textarea></div>
+          <p class="text-xs text-gray-500">Use <code>{{model_name}}</code> to insert the model name.</p>
         </div>
         <div id="panelScript" class="p-1 hidden">
           <div class="border-b flex text-xs font-medium"><button type="button" id="htmlTab_index" class="flex-1 py-2 px-3 text-center border-b-2"></button><button type="button" id="htmlTab_extension" class="flex-1 py-2 px-3 text-center border-b-2"></button></div>
