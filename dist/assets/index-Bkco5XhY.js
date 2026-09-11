@@ -1737,7 +1737,6 @@ function updateAttachBadge() {
 	el.attachBadge.classList.toggle("hidden", n === 0);
 }
 $(el.attachBtn).on("click", () => {
-	if (state.busy) return;
 	if (state.attachments.length) {
 		state.attachments = [];
 		updateAttachBadge();
@@ -1748,6 +1747,18 @@ $(el.attachBtn).on("click", () => {
 $(el.fileInput).on("change", async () => {
 	const files = [...el.fileInput.files || []];
 	if (!files.length) return;
+	for (const f of files) {
+		const at = await toAttach(f).catch(() => null);
+		if (at) state.attachments.push(at);
+	}
+	updateAttachBadge();
+});
+$(el.composer).on("paste", async (e) => {
+	const files = [...(e.clipboardData || e.originalEvent?.clipboardData)?.files || []];
+	if (!files.length) return;
+	e.preventDefault();
+	state.attachments = [];
+	el.fileInput.value = "";
 	for (const f of files) {
 		const at = await toAttach(f).catch(() => null);
 		if (at) state.attachments.push(at);
@@ -1768,6 +1779,9 @@ $(el.composer).on("submit", async (e) => {
 		text
 	});
 	parts.push(...state.attachments);
+	state.attachments = [];
+	updateAttachBadge();
+	el.fileInput.value = "";
 	const userMsg = {
 		role: "user",
 		content: parts.length ? parts : [{
@@ -1781,7 +1795,7 @@ $(el.composer).on("submit", async (e) => {
 		const title = await generateTitleWithAI(state.messages) || partsToText(state.messages.find((m) => m.role === "user")).replace(/!\[\]\(data:[^\)]+\)/g, "[Image]") || "Untitled";
 		await THREAD.setTitle(th.id, title);
 	})();
-	if (!SUNE.model) return state.attachments = [], updateAttachBadge();
+	if (!SUNE.model) return;
 	state.busy = true;
 	setBtnStop();
 	const a = SUNE.active, suneMeta = {
@@ -1835,8 +1849,6 @@ $(el.composer).on("submit", async (e) => {
 		} else if (!done) THREAD.persist(false);
 	};
 	await streamChat(onDelta, streamId);
-	state.attachments = [];
-	updateAttachBadge();
 });
 var jars = {
 	html: null,
