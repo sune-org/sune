@@ -11,6 +11,11 @@ export function kbUpdate() {
 }
 
 export function kbBind() {
+  el.input.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' || e.shiftKey || e.isComposing || e.keyCode === 229 || e.repeat || !matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    e.preventDefault();
+    el.composer.requestSubmit();
+  });
   if (window.visualViewport) {
     ['resize', 'scroll'].forEach(ev => window.visualViewport.addEventListener(ev, () => kbUpdate(), { passive: true }));
   }
