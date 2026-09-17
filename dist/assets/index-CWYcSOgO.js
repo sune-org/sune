@@ -646,6 +646,11 @@ function kbUpdate() {
 	el.chat.style.scrollPaddingBottom = fh + overlap + 16 + "px";
 }
 function kbBind() {
+	el.input.addEventListener("keydown", (e) => {
+		if (e.key !== "Enter" || e.shiftKey || e.isComposing || e.keyCode === 229 || e.repeat || !matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+		e.preventDefault();
+		el.composer.requestSubmit();
+	});
 	if (window.visualViewport) ["resize", "scroll"].forEach((ev) => window.visualViewport.addEventListener(ev, () => kbUpdate(), { passive: true }));
 	window.$(window).on("resize orientationchange", () => setTimeout(kbUpdate, 50));
 	window.$(el.input).on("focus click", () => {
