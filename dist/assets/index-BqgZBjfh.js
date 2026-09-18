@@ -2168,40 +2168,44 @@ el.htmlTab_index.textContent = "index.html";
 el.htmlTab_extension.textContent = "extension.html";
 el.htmlTab_index.onclick = () => showHtmlTab("index");
 el.htmlTab_extension.onclick = () => showHtmlTab("extension");
-var pullThreads = async () => {
+var pullThreads = async (invalidateAll = false) => {
 	const u = el.threadRepoInput.value.trim();
 	if (!u.startsWith("gh://")) return;
 	const info = parseGhUrl(u);
 	try {
 		const items = await ghApi(`${info.apiPath}?ref=${info.branch}`);
-		if (!items) {
-			THREAD.list = [];
-			await THREAD.save();
-		} else {
-			THREAD.list = items.map((i) => {
-				if (i.type === "dir") return {
-					id: i.name,
-					title: i.name,
-					type: "folder",
-					updatedAt: 0
-				};
-				if (i.type === "file" && i.name.endsWith(".md")) return {
-					id: i.path,
-					title: i.name,
-					type: "file",
-					updatedAt: 0
-				};
-				const d = deserializeThreadName(i.name);
-				return d ? {
-					...d,
-					status: "synced"
-				} : null;
-			}).filter(Boolean);
-			await THREAD.save();
+		const local = await localforage.getItem("rem_index_" + u.substring(5)) || [];
+		const remote = (items || []).map((i) => {
+			if (i.type === "dir") return {
+				id: i.name,
+				title: i.name,
+				type: "folder",
+				updatedAt: 0
+			};
+			if (i.type === "file" && i.name.endsWith(".md")) return {
+				id: i.path,
+				title: i.name,
+				type: "file",
+				updatedAt: 0
+			};
+			const d = deserializeThreadName(i.name);
+			return d ? {
+				...d,
+				status: "synced"
+			} : null;
+		}).filter(Boolean);
+		for (const t of invalidateAll ? [...local, ...remote] : local) {
+			if (t.type !== "thread") continue;
+			const next = remote.find((r) => r.type === "thread" && r.id === t.id);
+			if (invalidateAll || t.status !== "synced" || !next || next.updatedAt > t.updatedAt) await localforage.removeItem("rem_t_" + t.id);
 		}
+		THREAD.list = remote;
+		await THREAD.save();
 		await renderThreads();
+		return true;
 	} catch (e) {
 		console.error("Auto-pull failed:", e);
+		return false;
 	}
 };
 $(el.threadRepoInput).on("change", async () => {
@@ -2301,8 +2305,9 @@ $(el.threadSyncBtn).on("click", async () => {
 			THREAD.list = THREAD.list.filter((x) => !toRemove.includes(x.id));
 			await THREAD.save();
 			alert("Pushed to GitHub.");
-		} else {
-			await pullThreads();
+		} else if (await pullThreads(true)) {
+			state.currentThreadId = null;
+			clearChat();
 			alert("Pulled from GitHub.");
 		}
 		await renderThreads();
