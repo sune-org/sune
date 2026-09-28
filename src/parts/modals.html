@@ -20,11 +20,11 @@
 <div id="suneModal" class="hidden fixed inset-0 z-50">
   <div class="absolute inset-0 bg-black/30"></div>
   <div class="absolute inset-x-0 top-12 mx-auto w-full max-w-md px-4">
-    <div class="rounded-2xl bg-white shadow-xl border border-gray-200 overflow-hidden">
+    <div class="flex flex-col max-h-[calc(100dvh-4rem)] rounded-2xl bg-white shadow-xl border border-gray-200 overflow-hidden">
       <div class="px-4 py-3 border-b text-sm font-semibold flex items-center gap-2"><input id="suneURL" type="text" placeholder="" class="flex-1 min-w-0 h-10 rounded-xl border-0 bg-gray-50 px-3 text-gray-400 placeholder:text-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white text-xs font-mono focus:text-black"/><button id="syncSune" class="p-1.5 rounded hover:bg-gray-100" aria-label="Refresh"><i data-lucide="refresh-cw" class="h-5 w-5"></i></button></div>
-      <form id="settingsForm" class="text-sm">
+      <form id="settingsForm" class="flex flex-col min-h-0 text-sm">
         <div class="border-b flex text-xs font-medium"><button type="button" id="tabModel" class="flex-1 py-2 px-3 text-center border-b-2 border-black">Model & Sampling</button><button type="button" id="tabPrompt" class="flex-1 py-2 px-3 text-center border-b-2 border-transparent hover:border-gray-300">System Prompt</button><button type="button" id="tabScript" class="flex-1 py-2 px-3 text-center border-b-2 border-transparent hover:border-gray-300">HTML</button></div>
-        <div id="panelModel" class="p-4 space-y-4">
+        <div id="panelModel" class="p-4 space-y-4 overflow-y-auto">
           <div class="grid grid-cols-2 gap-3"><div><div class="flex items-center gap-1 mb-1"><label for="set_model" class="text-gray-700 font-medium">Model name</label><button type="button" onclick="modelHelp.showModal()" class="p-1 -m-1 rounded-full text-gray-400 hover:text-gray-700" aria-label="How to set the model name"><i data-lucide="circle-question-mark" class="h-4 w-4"></i></button></div><input id="set_model" type="text" class="w-full rounded-xl border border-gray-300 px-3 py-2" placeholder="google/gemini-3-pro-preview"/></div><div><label class="block text-gray-700 font-medium mb-1">Reasoning Effort</label><select id="set_reasoning_effort" class="w-full rounded-xl border border-gray-300 px-3 py-2"><option value="">Omitted</option><option value="none">None</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div></div>
           <div class="grid grid-cols-2 gap-3">
             <div><label class="block text-gray-700 font-medium mb-1">Temperature <span class="text-gray-400">(0–2)</span></label><input id="set_temperature" type="number" min="0" max="2" step="0.01" class="w-full rounded-xl border border-gray-300 px-3 py-2" placeholder="1.0"/></div>
@@ -68,11 +68,11 @@
             </div>
           </div>
         </div>
-        <div id="panelPrompt" class="p-4 space-y-4 hidden">
+        <div id="panelPrompt" class="p-4 space-y-4 overflow-y-auto hidden">
           <div><div class="flex items-center justify-between mb-1"><label for="set_system_prompt" class="block text-gray-700 font-medium">System Prompt</label><div class="flex gap-2"><button type="button" id="copySystemPrompt" class="px-2 py-1 text-xs rounded-md bg-gray-100 hover:bg-gray-200">Copy</button><button type="button" id="pasteSystemPrompt" class="px-2 py-1 text-xs rounded-md bg-gray-100 hover:bg-gray-200">Paste</button></div></div><textarea id="set_system_prompt" rows="8" class="w-full rounded-xl border border-gray-300 px-3 py-2" placeholder="Enter a system prompt to guide the sune"></textarea></div>
           <p class="text-xs text-gray-500">Use <code>{{model_name}}</code> to insert the model name.</p>
         </div>
-        <div id="panelScript" class="p-1 hidden">
+        <div id="panelScript" class="p-1 overflow-y-auto hidden">
           <div class="border-b flex text-xs font-medium"><button type="button" id="htmlTab_index" class="flex-1 py-2 px-3 text-center border-b-2"></button><button type="button" id="htmlTab_extension" class="flex-1 py-2 px-3 text-center border-b-2"></button></div>
           <div class="pt-0">
             <pre id="htmlEditor" class="w-full h-[50vh] p-3 rounded-xl border border-gray-300 bg-white overflow-auto font-mono text-[12px] leading-5" contenteditable="plaintext-only" spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off"></pre>
@@ -98,7 +98,7 @@
       <div><div class="font-medium">OpenRouter <span class="font-normal text-gray-400">· vendor/model</span></div><code>or:anthropic/claude-opus-5.5</code><div class="text-xs text-gray-500 mt-0.5">Browse slugs at <a href="https://openrouter.ai/models" target="_blank" rel="noopener">openrouter.ai/models</a></div></div>
       <div><div class="font-medium">OpenAI</div><code>oai:gpt-6-sol</code><div class="text-xs text-gray-500 mt-0.5"><a href="https://platform.openai.com/docs/models" target="_blank" rel="noopener">OpenAI models</a></div></div>
       <div><div class="font-medium">Google</div><code>g:gemini-3.8-flash</code><div class="text-xs text-gray-500 mt-0.5"><a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">Gemini models</a></div></div>
-      <div><div class="font-medium">Claude</div><code>cla:claude-opus-5-5</code><div class="text-xs text-gray-500 mt-0.5">Dashes, not dots like on OpenRouter. <a href="https://docs.anthropic.com/en/docs/about-claude/models" target="_blank" rel="noopener">Claude models</a></div></div>
+      <div><div class="font-medium">Claude</div><code>cla:claude-opus-5-5</code><div class="text-xs text-gray-500 mt-0.5"><a href="https://docs.anthropic.com/en/docs/about-claude/models" target="_blank" rel="noopener">Claude models</a></div></div>
     </div>
     <p class="text-xs text-gray-500">Tip: add <code>:online</code> to the end to enable web search, e.g. <code>g:gemini-3.8-flash:online</code>.</p>
   </div>
