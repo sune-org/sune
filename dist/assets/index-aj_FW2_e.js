@@ -40,7 +40,7 @@ var buildBody = () => {
 		role: "system",
 		content: mPrompt
 	});
-	const modelName = SUNE.model.replace(/^(or:|oai:|g:|cla:|cf:)/, "").replace(/^[^/]*\//, "").replace(/(?::online|:free)+$/, "");
+	const modelName = SUNE.model.replace(/^(or:|oai:|g:|cla:)/, "").replace(/^[^/]*\//, "").replace(/(?::online|:free)+$/, "");
 	const sPrompt = (SUNE.system_prompt || "").trim().replaceAll("{{model_name}}", () => modelName);
 	if (sPrompt) msgs.push({
 		role: "system",
@@ -63,7 +63,7 @@ var buildBody = () => {
 		if (last.role === "assistant" && last.content.length === 0 && (!last.images || last.images.length === 0)) msgs.pop();
 	}
 	const b = payloadWithSampling({
-		model: SUNE.model.replace(/^(or:|oai:|g:|cla:|cf:)/, ""),
+		model: SUNE.model.replace(/^(or:|oai:|g:|cla:)/, ""),
 		messages: msgs,
 		stream: true
 	});
@@ -82,8 +82,8 @@ var buildBody = () => {
 };
 async function streamORP(body, onDelta, streamId) {
 	const { USER, SUNE, state, gid, cacheStore } = window;
-	const model = SUNE.model, provider = model.startsWith("oai:") ? "openai" : model.startsWith("g:") ? "google" : model.startsWith("cla:") ? "claude" : model.startsWith("cf:") ? "cloudflare" : model.startsWith("or:") ? "openrouter" : USER.provider;
-	const apiKey = provider === "openai" ? USER.apiKeyOpenAI : provider === "google" ? USER.apiKeyGoogle : provider === "claude" ? USER.apiKeyClaude : provider === "cloudflare" ? USER.apiKeyCloudflare : USER.apiKeyOpenRouter;
+	const model = SUNE.model, provider = model.startsWith("oai:") ? "openai" : model.startsWith("g:") ? "google" : model.startsWith("cla:") ? "claude" : model.startsWith("or:") ? "openrouter" : USER.provider;
+	const apiKey = provider === "openai" ? USER.apiKeyOpenAI : provider === "google" ? USER.apiKeyGoogle : provider === "claude" ? USER.apiKeyClaude : USER.apiKeyOpenRouter;
 	if (!apiKey) {
 		onDelta(window.localDemoReply(), true);
 		return {
