@@ -18,14 +18,13 @@ export const USER = {
   set apiKeyCloudflare(v) { localStorage.setItem('cloudflare_api_key', v || ''); },
   get apiKey() {
     const p = this.provider;
-    return p === 'openai' ? this.apiKeyOpenAI : p === 'google' ? this.apiKeyGoogle : p === 'claude' ? this.apiKeyClaude : p === 'cloudflare' ? this.apiKeyCloudflare : this.apiKeyOpenRouter;
+    return p === 'openai' ? this.apiKeyOpenAI : p === 'google' ? this.apiKeyGoogle : p === 'claude' ? this.apiKeyClaude : this.apiKeyOpenRouter;
   },
   set apiKey(v) {
     const p = this.provider;
     if (p === 'openai') this.apiKeyOpenAI = v;
     else if (p === 'google') this.apiKeyGoogle = v;
     else if (p === 'claude') this.apiKeyClaude = v;
-    else if (p === 'cloudflare') this.apiKeyCloudflare = v;
     else this.apiKeyOpenRouter = v;
   },
   get masterPrompt() { return localStorage.getItem('master_prompt') || 'Always respond using markdown.'; },
