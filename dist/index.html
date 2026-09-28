@@ -106,7 +106,7 @@
       <form id="settingsForm" class="text-sm">
         <div class="border-b flex text-xs font-medium"><button type="button" id="tabModel" class="flex-1 py-2 px-3 text-center border-b-2 border-black">Model & Sampling</button><button type="button" id="tabPrompt" class="flex-1 py-2 px-3 text-center border-b-2 border-transparent hover:border-gray-300">System Prompt</button><button type="button" id="tabScript" class="flex-1 py-2 px-3 text-center border-b-2 border-transparent hover:border-gray-300">HTML</button></div>
         <div id="panelModel" class="p-4 space-y-4">
-          <div class="grid grid-cols-2 gap-3"><div><label class="block text-gray-700 font-medium mb-1">Model name</label><input id="set_model" type="text" class="w-full rounded-xl border border-gray-300 px-3 py-2" placeholder="google/gemini-3-pro-preview"/></div><div><label class="block text-gray-700 font-medium mb-1">Reasoning Effort</label><select id="set_reasoning_effort" class="w-full rounded-xl border border-gray-300 px-3 py-2"><option value="">Omitted</option><option value="none">None</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div></div>
+          <div class="grid grid-cols-2 gap-3"><div><div class="flex items-center gap-1 mb-1"><label for="set_model" class="text-gray-700 font-medium">Model name</label><button type="button" onclick="modelHelp.showModal()" class="p-1 -m-1 rounded-full text-gray-400 hover:text-gray-700" aria-label="How to set the model name"><i data-lucide="circle-question-mark" class="h-4 w-4"></i></button></div><input id="set_model" type="text" class="w-full rounded-xl border border-gray-300 px-3 py-2" placeholder="google/gemini-3-pro-preview"/></div><div><label class="block text-gray-700 font-medium mb-1">Reasoning Effort</label><select id="set_reasoning_effort" class="w-full rounded-xl border border-gray-300 px-3 py-2"><option value="">Omitted</option><option value="none">None</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div></div>
           <div class="grid grid-cols-2 gap-3">
             <div><label class="block text-gray-700 font-medium mb-1">Temperature <span class="text-gray-400">(0–2)</span></label><input id="set_temperature" type="number" min="0" max="2" step="0.01" class="w-full rounded-xl border border-gray-300 px-3 py-2" placeholder="1.0"/></div>
             <div><label class="block text-gray-700 font-medium mb-1">Top P <span class="text-gray-400">(0–1)</span></label><input id="set_top_p" type="number" min="0" max="1" step="0.01" class="w-full rounded-xl border border-gray-300 px-3 py-2" placeholder="1.0"/></div>
@@ -169,6 +169,21 @@
     </div>
   </div>
 </div>
+<dialog id="modelHelp" onclick="event.target===this&&this.close()" class="w-[calc(100%-2rem)] max-w-sm max-h-[85dvh] p-0 rounded-2xl border border-gray-200 bg-white text-gray-900 shadow-xl backdrop:bg-black/30">
+  <div class="px-4 py-3 border-b text-sm font-semibold flex items-center justify-between"><span>Model name</span><button type="button" onclick="modelHelp.close()" class="p-1 rounded hover:bg-gray-100" aria-label="Close"><svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
+  <div class="p-4 space-y-3 text-sm text-gray-700 [&_code]:text-xs [&_code]:bg-gray-100 [&_code]:rounded [&_code]:px-1 [&_code]:py-0.5 [&_a]:underline [&_a]:text-gray-900">
+    <p>The <b>Provider</b> selected in <b>Account Settings → General</b> is used, unless the model name starts with one of these prefixes:</p>
+    <div class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1"><code>or:</code><span>OpenRouter</span><code>oai:</code><span>OpenAI</span><code>g:</code><span>Google</span><code>cla:</code><span>Claude</span></div>
+    <p>After the prefix, write the model slug exactly the way that provider's API expects it:</p>
+    <div class="space-y-2">
+      <div><div class="font-medium">OpenRouter <span class="font-normal text-gray-400">· vendor/model</span></div><code>or:anthropic/claude-opus-5.5</code><div class="text-xs text-gray-500 mt-0.5">Browse slugs at <a href="https://openrouter.ai/models" target="_blank" rel="noopener">openrouter.ai/models</a></div></div>
+      <div><div class="font-medium">OpenAI</div><code>oai:gpt-6-sol</code><div class="text-xs text-gray-500 mt-0.5"><a href="https://platform.openai.com/docs/models" target="_blank" rel="noopener">OpenAI models</a></div></div>
+      <div><div class="font-medium">Google</div><code>g:gemini-3.8-flash</code><div class="text-xs text-gray-500 mt-0.5"><a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">Gemini models</a></div></div>
+      <div><div class="font-medium">Claude</div><code>cla:claude-opus-5-5</code><div class="text-xs text-gray-500 mt-0.5">Dashes, not dots like on OpenRouter. <a href="https://docs.anthropic.com/en/docs/about-claude/models" target="_blank" rel="noopener">Claude models</a></div></div>
+    </div>
+    <p class="text-xs text-gray-500">Tip: add <code>:online</code> to the end to enable web search, e.g. <code>g:gemini-3.8-flash:online</code>.</p>
+  </div>
+</dialog>
 <div id="accountSettingsModal" class="hidden fixed inset-0 z-50">
   <div class="absolute inset-0 bg-black/30"></div>
   <div class="absolute inset-x-0 top-16 mx-auto w-full max-w-md px-4">
