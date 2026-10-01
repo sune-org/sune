@@ -4,7 +4,7 @@ Sune for Android is a [Trusted Web Activity](https://developer.chrome.com/docs/a
 
 | | New app | Legacy app (v0.x) |
 |---|---|---|
-| Package | `chat.sune` | `com.planetrenox.sune` |
+| Package | `chat.sune.app` | `com.planetrenox.sune` |
 | Host | `sune.chat` (also trusts `sune.planetrenox.com`) | `sune.planetrenox.com` |
 | Signing cert SHA-256 | `09:85:1F:7B:BB:40:67:9C:F8:70:1C:7D:9F:65:72:77:78:0E:C0:58:CF:34:09:9A:97:D2:8A:74:FB:CE:87:2A` | `E8:7D:70:60:C2:7D:EF:CB:4D:4D:2B:E2:2E:5E:37:ED:F7:0B:1E:F5:77:D7:04:1F:6B:07:EC:B8:1D:78:6D:43` (**leaked**) |
 
@@ -34,4 +34,4 @@ Never in the repo (`*.jks` is gitignored). Repo secrets, read only by `.github/w
 | `ANDROID_KEYSTORE_PASS` | keystore password (also used as the key password) |
 | `ANDROID_KEY_ALIAS` | `sune` |
 
-Losing this key means users can't update `chat.sune` and would have to uninstall and reinstall. Keep an offline copy.
+Losing this key means users can't update `chat.sune.app` and would have to uninstall and reinstall. Keep an offline copy.

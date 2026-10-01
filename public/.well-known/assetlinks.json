@@ -13,7 +13,7 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "chat.sune",
+      "package_name": "chat.sune.app",
       "sha256_cert_fingerprints": [
         "09:85:1F:7B:BB:40:67:9C:F8:70:1C:7D:9F:65:72:77:78:0E:C0:58:CF:34:09:9A:97:D2:8A:74:FB:CE:87:2A"
       ]

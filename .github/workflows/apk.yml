@@ -97,11 +97,11 @@ jobs:
           "$BT/apksigner" verify --verbose --print-certs "$APK" | tee verify.txt
           grep -q "Number of signers: 1" verify.txt
           GOT=$(sed -n 's/.*certificate SHA-256 digest: //p' verify.txt | sed -n 1p)
-          WANT=$(jq -r '.[].target | select(.package_name=="chat.sune") | .sha256_cert_fingerprints[]' "$GITHUB_WORKSPACE/public/.well-known/assetlinks.json" | tr -d ':' | tr A-F a-f)
+          WANT=$(jq -r '.[].target | select(.package_name=="chat.sune.app") | .sha256_cert_fingerprints[]' "$GITHUB_WORKSPACE/public/.well-known/assetlinks.json" | tr -d ':' | tr A-F a-f)
           [ "$GOT" = "$WANT" ] || { echo "::error::signing cert $GOT does not match assetlinks.json ($WANT)"; exit 1; }
           "$BT/aapt2" dump badging "$APK" > full-badging.txt
           grep -m1 '^package:' full-badging.txt | tee badging.txt
-          grep -q "name='chat.sune' versionCode='$CODE' versionName='$VERSION'" badging.txt
+          grep -q "name='chat.sune.app' versionCode='$CODE' versionName='$VERSION'" badging.txt
           sha256sum "$APK" | tee "$APK.sha256"
           echo "SIGNER=$GOT" >> $GITHUB_ENV
 
@@ -126,7 +126,7 @@ jobs:
           gh attestation verify $APK --repo $GITHUB_REPOSITORY
           \`\`\`
 
-          - Package: \`chat.sune\`
+          - Package: \`chat.sune.app\`
           - SHA-256: \`$SHA\`
           - Signing certificate SHA-256: \`$SIGNER\`
           EOF
