@@ -63,6 +63,8 @@ jobs:
           SM=$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager
           yes | "$SM" --sdk_root="$SDK" --licenses >/dev/null || true # yes exits on SIGPIPE
           "$SM" --sdk_root="$SDK" "build-tools;36.1.0" "platforms;android-36" >/dev/null
+          echo "ANDROID_HOME=$SDK" >> $GITHUB_ENV # the runner's own ANDROID_SDK_ROOT would conflict
+          echo "ANDROID_SDK_ROOT=$SDK" >> $GITHUB_ENV
           npm install --global --ignore-scripts @bubblewrap/cli@1.25.0
           mkdir -p ~/.bubblewrap
           jq -n --arg jdk "$JAVA_HOME" --arg sdk "$SDK" '{jdkPath:$jdk,androidSdkPath:$sdk}' > ~/.bubblewrap/config.json
