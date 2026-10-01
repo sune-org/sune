@@ -24,3 +24,8 @@ dist-ssr
 
 package-lock.json
 bun.lock
+
+# Signing keys (live in Infisical /sune, never commit)
+*.jks
+*.keystore
+*.p12
