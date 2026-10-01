@@ -8,5 +8,15 @@
         "E8:7D:70:60:C2:7D:EF:CB:4D:4D:2B:E2:2E:5E:37:ED:F7:0B:1E:F5:77:D7:04:1F:6B:07:EC:B8:1D:78:6D:43"
       ]
     }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "chat.sune",
+      "sha256_cert_fingerprints": [
+        "09:85:1F:7B:BB:40:67:9C:F8:70:1C:7D:9F:65:72:77:78:0E:C0:58:CF:34:09:9A:97:D2:8A:74:FB:CE:87:2A"
+      ]
+    }
   }
 ]
