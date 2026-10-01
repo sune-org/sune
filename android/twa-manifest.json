@@ -17,7 +17,7 @@
   "maskableIconUrl": "https://sune.chat/appstore_content/%E2%9C%BA.png",
   "webManifestUrl": "https://sune.chat/manifest.webmanifest",
   "fullScopeUrl": "https://sune.chat/",
-  "additionalTrustedOrigins": ["https://sune.planetrenox.com"],
+  "additionalTrustedOrigins": ["sune.planetrenox.com"],
   "enableNotifications": false,
   "enableSiteSettingsShortcut": false,
   "splashScreenFadeOutDuration": 300,
