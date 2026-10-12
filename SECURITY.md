@@ -8,4 +8,4 @@ Streaming is relayed through [`us.proxy.sune.chat`](https://github.com/sune-org/
 
 **What it doesn't do:** no prompt logging (messages sit in `:memory:` SQLite with a 20-min TTL for reconnects, never written to disk), no reading your chats, no storing keys, no third-party sharing.
 
-**What I see:** an [ntfy](https://ntfy.sh) ping when a run ends/fails, containing only: run ID, `[provider/model]`, duration, and error message (if any). No prompts, no responses, no IP, no key. Source is public — audit it [here](https://github.com/sune-org/us.proxy.sune.chat).
+**What I see:** an [ntfy](https://ntfy.sh) ping when a run ends/fails, containing only: run ID, `[provider/model]`, duration, error message (if any), and the sune's non-empty generation settings (temperature, top_p, top_k, frequency/repetition penalty, min_p, top_a, max tokens, reasoning effort, show thoughts, image output/aspect ratio/size). No prompts (system or master prompts included), no responses, no IP, no key. Source is public — audit it [here](https://github.com/sune-org/us.proxy.sune.chat).
