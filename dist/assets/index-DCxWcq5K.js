@@ -284,6 +284,7 @@ var el = window.el = Object.fromEntries([
 	"footer",
 	"attachBtn",
 	"attachBadge",
+	"attachPopover",
 	"fileInput",
 	"htmlEditor",
 	"extensionHtmlEditor",
@@ -1740,34 +1741,59 @@ function updateAttachBadge() {
 	el.attachBadge.textContent = String(n);
 	el.attachBadge.classList.toggle("hidden", n === 0);
 }
-$(el.attachBtn).on("click", () => {
-	if (state.attachments.length) {
-		state.attachments = [];
-		updateAttachBadge();
-		el.fileInput.value = "";
-	}
-	el.fileInput.click();
-});
-$(el.fileInput).on("change", async () => {
-	const files = [...el.fileInput.files || []];
-	if (!files.length) return;
+var addAttachments = async (files) => {
 	for (const f of files) {
 		const at = await toAttach(f).catch(() => null);
 		if (at) state.attachments.push(at);
 	}
 	updateAttachBadge();
+};
+var hideAttachPopover = () => el.attachPopover.classList.add("hidden");
+function showAttachPopover() {
+	if (!state.attachments.length || !el.attachPopover.classList.contains("hidden")) return;
+	haptic();
+	el.attachPopover.classList.remove("hidden");
+	positionPopover(el.attachBtn, el.attachPopover);
+	icons();
+}
+var attachHold = null, attachHeld = false;
+var holdAttach = () => {
+	attachHeld = true;
+	showAttachPopover();
+};
+$(el.attachBtn).on("pointerdown", (e) => {
+	attachHeld = false;
+	if (e.pointerType !== "mouse") attachHold = setTimeout(holdAttach, 500);
+}).on("pointerup pointercancel pointerleave", () => clearTimeout(attachHold)).on("contextmenu", (e) => {
+	e.preventDefault();
+	holdAttach();
+}).on("click", () => {
+	if (attachHeld) return attachHeld = false;
+	hideAttachPopover();
+	el.fileInput.click();
+});
+$(el.attachPopover).on("click", (e) => {
+	if (!e.target.closest("[data-action=\"clear\"]")) return;
+	state.attachments = [];
+	updateAttachBadge();
+	hideAttachPopover();
+});
+$(document).on("click", (e) => {
+	if (!el.attachPopover.contains(e.target) && !el.attachBtn.contains(e.target)) hideAttachPopover();
+});
+$(window).on("resize", () => {
+	if (!el.attachPopover.classList.contains("hidden")) positionPopover(el.attachBtn, el.attachPopover);
+});
+$(el.fileInput).on("change", async () => {
+	const files = [...el.fileInput.files || []];
+	el.fileInput.value = "";
+	await addAttachments(files);
 });
 $(el.composer).on("paste", async (e) => {
 	const files = [...(e.clipboardData || e.originalEvent?.clipboardData)?.files || []];
 	if (!files.length) return;
 	e.preventDefault();
-	state.attachments = [];
-	el.fileInput.value = "";
-	for (const f of files) {
-		const at = await toAttach(f).catch(() => null);
-		if (at) state.attachments.push(at);
-	}
-	updateAttachBadge();
+	await addAttachments(files);
 });
 $(el.composer).on("submit", async (e) => {
 	e.preventDefault();
