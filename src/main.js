@@ -119,16 +119,20 @@ $(el.sunePopover).on('click',async e=>{const act=e.target.closest('[data-action]
 $(el.sunesSyncUploadBtn).on('click',()=>{hideSunesSyncPopover();performSuneUpload()});
 $(el.sunesSyncDownloadBtn).on('click',()=>{hideSunesSyncPopover();performSuneDownload(false)});
 function updateAttachBadge(){const n=state.attachments.length;el.attachBadge.textContent=String(n);el.attachBadge.classList.toggle('hidden',n===0)}
-$(el.attachBtn).on('click',()=>{if(state.attachments.length){state.attachments=[];updateAttachBadge();el.fileInput.value=''};el.fileInput.click()})
-$(el.fileInput).on('change',async()=>{const files=[...(el.fileInput.files||[])];if(!files.length)return;for(const f of files){const at=await toAttach(f).catch(()=>null);if(at)state.attachments.push(at)}updateAttachBadge()})
+const addAttachments=async files=>{for(const f of files){const at=await toAttach(f).catch(()=>null);if(at)state.attachments.push(at)}updateAttachBadge()}
+const hideAttachPopover=()=>el.attachPopover.classList.add('hidden')
+function showAttachPopover(){if(!state.attachments.length||!el.attachPopover.classList.contains('hidden'))return;haptic();el.attachPopover.classList.remove('hidden');positionPopover(el.attachBtn,el.attachPopover);icons()}
+let attachHold=null,attachHeld=false;const holdAttach=()=>{attachHeld=true;showAttachPopover()}
+$(el.attachBtn).on('pointerdown',e=>{attachHeld=false;if(e.pointerType!=='mouse')attachHold=setTimeout(holdAttach,500)}).on('pointerup pointercancel pointerleave',()=>clearTimeout(attachHold)).on('contextmenu',e=>{e.preventDefault();holdAttach()}).on('click',()=>{if(attachHeld)return attachHeld=false;hideAttachPopover();el.fileInput.click()})
+$(el.attachPopover).on('click',e=>{if(!e.target.closest('[data-action="clear"]'))return;state.attachments=[];updateAttachBadge();hideAttachPopover()})
+$(document).on('click',e=>{if(!el.attachPopover.contains(e.target)&&!el.attachBtn.contains(e.target))hideAttachPopover()})
+$(window).on('resize',()=>{if(!el.attachPopover.classList.contains('hidden'))positionPopover(el.attachBtn,el.attachPopover)})
+$(el.fileInput).on('change',async()=>{const files=[...(el.fileInput.files||[])];el.fileInput.value='';await addAttachments(files)})
 $(el.composer).on('paste',async e=>{
   const cbd=e.clipboardData||e.originalEvent?.clipboardData,files=[...(cbd?.files||[])];
   if(!files.length)return;
   e.preventDefault();
-  state.attachments=[];
-  el.fileInput.value='';
-  for(const f of files){const at=await toAttach(f).catch(()=>null);if(at)state.attachments.push(at)}
-  updateAttachBadge();
+  await addAttachments(files);
 })
 $(el.composer).on('submit',async e=>{e.preventDefault();if(state.busy)return;const text=el.input.value.trim();if(!text&&!state.attachments.length)return SUNE.infer();await ensureThreadOnFirstUser(text||'(attachments)');const th=THREAD.active,shouldGenTitle=th&&!th.title;el.input.value='';const parts=[];if(text)parts.push({type:'text',text});parts.push(...state.attachments);state.attachments=[];updateAttachBadge();el.fileInput.value='';const userMsg={role:'user',content:parts.length?parts:[{type:'text',text:text||'(sent attachments)'}]};addMessage(userMsg);el.composer.dispatchEvent(new CustomEvent('user:send',{detail:{message:userMsg}}));if(shouldGenTitle)(async()=>{const title=await generateTitleWithAI(state.messages)||partsToText(state.messages.find(m=>m.role==='user')).replace(/!\[\]\(data:[^\)]+\)/g,'[Image]')||'Untitled';await THREAD.setTitle(th.id,title)})();if(!SUNE.model)return;state.busy=true;setBtnStop();const a=SUNE.active,suneMeta={sune_name:a.name,model:SUNE.model,avatar:a.avatar||''},streamId=sid(),suneBubble=addSuneBubbleStreaming(suneMeta,streamId);suneBubble.dataset.mid=streamId;suneBubble.innerHTML=SUNE_LOGO_SVG;const assistantMsg=Object.assign({id:streamId,role:'assistant',content:[{type:'text',text:''}]},suneMeta);state.messages.push(assistantMsg);THREAD.persist(false);state.stream={rid:streamId,bubble:suneBubble,meta:suneMeta,text:'',done:false};let buf='',completed=false;const onDelta=(delta,done,imgs)=>{if(imgs){if(!assistantMsg.images)assistantMsg.images=[];assistantMsg.images.push(...imgs)}buf+=delta;state.stream.text=buf;assistantMsg.content[0].text=buf;renderMarkdown(suneBubble,partsToText(assistantMsg),{enhance:false});if(done&&!completed){completed=true;setBtnSend();state.busy=false;enhanceCodeBlocks(suneBubble,true);THREAD.persist(true);el.composer.dispatchEvent(new CustomEvent('sune:newSuneResponse',{detail:{message:assistantMsg}}));state.stream={rid:null,bubble:null,meta:null,text:'',done:false}}else if(!done)THREAD.persist(false)};await streamChat(onDelta,streamId)})
 let jars={html:null,extension:null};

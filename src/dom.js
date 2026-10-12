@@ -10,7 +10,7 @@ export const el = window.el = Object.fromEntries(
     'suneList','newSuneBtn','userMenuBtn','userMenuAvatar','userMenu','accountSettingsOption','sunesImportOption',
     'sunesExportOption','threadsImportOption','importInput','sidebarBtnRight','sidebarRight',
     'sidebarOverlayRight','threadList','closeThreads','threadPopover','sunePopover','footer',
-    'attachBtn','attachBadge','fileInput','htmlEditor','extensionHtmlEditor',
+    'attachBtn','attachBadge','attachPopover','fileInput','htmlEditor','extensionHtmlEditor',
     'htmlTab_index','htmlTab_extension','suneHtml','accountSettingsModal','accountSettingsForm',
     'closeAccountSettings','cancelAccountSettings','set_master_prompt','set_provider',
     'set_api_key_or','set_api_key_oai','set_api_key_g','set_api_key_claude','set_api_key_cf',
