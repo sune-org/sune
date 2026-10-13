@@ -1,7 +1,7 @@
 import { asDataURL } from './utils.js';
 
-// Videos are shrunk to 360p @ 4 fps before attaching; HEVC when the device can encode it, H.264 otherwise.
-const SHORT_SIDE = 360, FPS = 4, VIDEO_BPS = { hevc: 130e3, avc: 160e3 }, AUDIO_BPS = 32e3;
+// Videos are shrunk to 360p @ 3 fps (matches the proxy's Gemini sampling rate) before attaching; HEVC when the device can encode it, H.264 otherwise.
+const SHORT_SIDE = 360, FPS = 3, VIDEO_BPS = { hevc: 130e3, avc: 160e3 }, AUDIO_BPS = 32e3;
 const even = n => Math.max(2, Math.round(n / 2) * 2);
 let mb;
 const loadMb = async () => {
