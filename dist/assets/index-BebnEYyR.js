@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-CtuZhjiD.js","assets/src-Bv2YeDx1.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-DwVUJclO.js","assets/src-CvA4YsQY.js"])))=>i.map(i=>d[i]);
 import mathjax3 from "https://esm.sh/markdown-it-mathjax3";
 //#region \0vite/modulepreload-polyfill.js
 (function polyfill() {
@@ -726,7 +726,7 @@ var __vitePreload = function preload(baseModule, deps, importerUrl) {
 };
 //#endregion
 //#region src/video.js
-var SHORT_SIDE = 360, FPS = 4, VIDEO_BPS = {
+var SHORT_SIDE = 360, FPS = 3, VIDEO_BPS = {
 	hevc: 13e4,
 	avc: 16e4
 }, AUDIO_BPS = 32e3;
@@ -734,13 +734,13 @@ var even = (n) => Math.max(2, Math.round(n / 2) * 2);
 var mb;
 var loadMb = async () => {
 	if (mb) return mb;
-	const m = await __vitePreload(() => import("./src-Bv2YeDx1.js"), []);
+	const m = await __vitePreload(() => import("./src-CvA4YsQY.js"), []);
 	if (!await m.canEncodeAudio("aac", {
 		numberOfChannels: 1,
 		sampleRate: 48e3,
 		bitrate: AUDIO_BPS
 	})) (await __vitePreload(async () => {
-		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-CtuZhjiD.js");
+		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-DwVUJclO.js");
 		return { registerAacEncoder };
 	}, __vite__mapDeps([0,1]))).registerAacEncoder();
 	return mb = m;

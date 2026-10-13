@@ -1466,7 +1466,7 @@ var EAC3_REDUCED_SAMPLE_RATES = [
 * License, v. 2.0. If a copy of the MPL was not distributed with this
 * file, You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-var VERSIONED_NAME = `Mediabunny v1.61.3`;
+var VERSIONED_NAME = `Mediabunny v1.61.4`;
 //#endregion
 //#region node_modules/mediabunny/dist/modules/src/codec-data.js
 /*!
@@ -13482,6 +13482,16 @@ var PacketReadingContext = class {
 		this.currentPesPacketPos += this.getCurrentPesPacket().data.byteLength;
 		this.currentPesPacketIndex++;
 	}
+	getPesPacketAt(pos) {
+		assert(pos <= this.currentPos);
+		let pesPacketIndex = this.currentPesPacketIndex;
+		let pesPacketPos = this.currentPesPacketPos;
+		while (pos < pesPacketPos) {
+			pesPacketIndex--;
+			pesPacketPos -= this.pesPackets[pesPacketIndex].data.byteLength;
+		}
+		return this.pesPackets[pesPacketIndex];
+	}
 	async markNextPacket() {
 		assert(!this.suppliedPacket);
 		const elementaryStream = this.elementaryStream;
@@ -13492,6 +13502,7 @@ var PacketReadingContext = class {
 			const nalHeaderSize = codec === "avc" ? 1 : 2;
 			let packetStartPos = null;
 			let frameStartFound = false;
+			let slicePts = null;
 			let lastFirstMacroblockInSlice = 0;
 			while (true) {
 				let remaining = this.ensureBuffered(CHUNK_SIZE);
@@ -13555,12 +13566,15 @@ var PacketReadingContext = class {
 							lastFirstMacroblockInSlice = firstMacroblockInSlice;
 						} else startsNewPicture = chunk[payloadStart] >> 7 === 1;
 						if (startsNewPicture) if (frameStartFound) isFrameBoundary = true;
-						else frameStartFound = true;
+						else {
+							frameStartFound = true;
+							slicePts = this.getPesPacketAt(chunkStartPos + nalHeaderStart).pts;
+						}
 					} else if (isAccessUnitStart && frameStartFound) isFrameBoundary = true;
 					if (isFrameBoundary) {
 						const packetLength = startCodePos - packetStartPos;
 						this.seekTo(packetStartPos);
-						return this.supplyPacket(packetLength, 0);
+						return this.supplyPacket(packetLength, 0, slicePts);
 					}
 					i += startCodeLength;
 				}
@@ -13569,7 +13583,7 @@ var PacketReadingContext = class {
 			if (packetStartPos !== null && this.endPos > packetStartPos) {
 				const packetLength = this.endPos - packetStartPos;
 				this.seekTo(packetStartPos);
-				return this.supplyPacket(packetLength, 0);
+				return this.supplyPacket(packetLength, 0, slicePts);
 			}
 		} else {
 			const codec = elementaryStream.info.codec;
@@ -13709,10 +13723,11 @@ var PacketReadingContext = class {
 		}
 	}
 	/** Supplies the context with a new encoded packet, beginning at the current position. */
-	supplyPacket(packetLength, intrinsicDuration) {
+	supplyPacket(packetLength, intrinsicDuration, timestampOverride = null) {
 		const currentPesPacket = this.getCurrentPesPacket();
 		let pts;
-		if (this.lastSuppliedPesPacket === currentPesPacket) {
+		if (timestampOverride !== null) pts = timestampOverride;
+		else if (this.lastSuppliedPesPacket === currentPesPacket) {
 			assert(this.nextPts !== null);
 			pts = this.nextPts;
 		} else {
