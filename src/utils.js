@@ -16,12 +16,13 @@ export const fmtSize = b => {
   return (x >= 10 ? Math.round(x) : Math.round(x * 10) / 10) + ' ' + u[i];
 };
 export const asDataURL = f => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(String(fr.result || '')); fr.readAsDataURL(f); });
-export const imgToWebp = (f, D = 96, q = 75) => new Promise((r, j) => {
+export const imgToWebp = (f, D = 96, q = 75, k) => new Promise((r, j) => {
   if (!f) return j();
   const i = new Image;
   i.onload = () => {
-    const c = document.createElement('canvas'), x = c.getContext('2d');
     let w = i.width, h = i.height;
+    if (k && Math.max(w, h) <= D) return URL.revokeObjectURL(i.src), r(asDataURL(f));
+    const c = document.createElement('canvas'), x = c.getContext('2d');
     if (D > 0 && Math.max(w, h) > D) w > h ? (h = D * h / w, w = D) : (w = D * w / h, h = D);
     c.width = w; c.height = h; x.drawImage(i, 0, 0, w, h);
     r(c.toDataURL('image/webp', clamp(q, 0, 100) / 100));
