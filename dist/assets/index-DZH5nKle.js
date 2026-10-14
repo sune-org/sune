@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-DwVUJclO.js","assets/src-CvA4YsQY.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-7jSJh11b.js","assets/src-CvA4YsQY.js"])))=>i.map(i=>d[i]);
 import mathjax3 from "https://esm.sh/markdown-it-mathjax3";
 //#region \0vite/modulepreload-polyfill.js
 (function polyfill() {
@@ -374,12 +374,13 @@ var asDataURL = (f) => new Promise((r) => {
 	fr.onload = () => r(String(fr.result || ""));
 	fr.readAsDataURL(f);
 });
-var imgToWebp = (f, D = 96, q = 75) => new Promise((r, j) => {
+var imgToWebp = (f, D = 96, q = 75, k) => new Promise((r, j) => {
 	if (!f) return j();
 	const i = new Image();
 	i.onload = () => {
-		const c = document.createElement("canvas"), x = c.getContext("2d");
 		let w = i.width, h = i.height;
+		if (k && Math.max(w, h) <= D) return URL.revokeObjectURL(i.src), r(asDataURL(f));
+		const c = document.createElement("canvas"), x = c.getContext("2d");
 		if (D > 0 && Math.max(w, h) > D) w > h ? (h = D * h / w, w = D) : (w = D * w / h, h = D);
 		c.width = w;
 		c.height = h;
@@ -740,7 +741,7 @@ var loadMb = async () => {
 		sampleRate: 48e3,
 		bitrate: AUDIO_BPS
 	})) (await __vitePreload(async () => {
-		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-DwVUJclO.js");
+		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-7jSJh11b.js");
 		return { registerAacEncoder };
 	}, __vite__mapDeps([0,1]))).registerAacEncoder();
 	return mb = m;
@@ -874,7 +875,7 @@ async function toAttach(file, opts) {
 		if (isVideo(name, mime)) return compressVideo(file, opts);
 		if (/^image\//.test(mime) || /\.(png|jpe?g|webp|gif)$/i.test(name)) return {
 			type: "image_url",
-			image_url: { url: mime === "image/webp" || /\.webp$/i.test(name) ? await asDataURL(file) : await imgToWebp(file, 2048, 94) }
+			image_url: { url: await imgToWebp(file, 2048, 94, mime === "image/webp" || /\.webp$/i.test(name)) }
 		};
 		if (mime === "application/pdf" || /\.pdf$/i.test(name)) {
 			const bin = b64(await asDataURL(file));
