@@ -6,7 +6,7 @@ export async function toAttach(file, opts) {
   if (file instanceof File) {
     const name = file.name || 'file', mime = (file.type || 'application/octet-stream').toLowerCase();
     if (isVideo(name, mime)) return compressVideo(file, opts);
-    if (/^image\//.test(mime) || /\.(png|jpe?g|webp|gif)$/i.test(name)) {
+    if (/^image\//.test(mime) || /\.(png|jpe?g|webp|gif|avif|jxl)$/i.test(name)) {
       const data = await imgToWebp(file, 2048, 94, mime === 'image/webp' || /\.webp$/i.test(name));
       return { type: 'image_url', image_url: { url: data } };
     }

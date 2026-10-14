@@ -28,7 +28,8 @@ export const imgToWebp = (f, D = 96, q = 75, k) => new Promise((r, j) => {
     r(c.toDataURL('image/webp', clamp(q, 0, 100) / 100));
     URL.revokeObjectURL(i.src);
   };
-  i.onerror = j; i.src = URL.createObjectURL(f);
+  i.onerror = () => (URL.revokeObjectURL(i.src), j(new Error("this browser can't read this image format")));
+  i.src = URL.createObjectURL(f);
 });
 export const b64 = x => x.split(',')[1] || '';
 export const utob = s => btoa(unescape(encodeURIComponent(s)));
