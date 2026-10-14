@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-7jSJh11b.js","assets/src-CvA4YsQY.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-kTu7ubye.js","assets/src-CvA4YsQY.js"])))=>i.map(i=>d[i]);
 import mathjax3 from "https://esm.sh/markdown-it-mathjax3";
 //#region \0vite/modulepreload-polyfill.js
 (function polyfill() {
@@ -388,7 +388,7 @@ var imgToWebp = (f, D = 96, q = 75, k) => new Promise((r, j) => {
 		r(c.toDataURL("image/webp", clamp(q, 0, 100) / 100));
 		URL.revokeObjectURL(i.src);
 	};
-	i.onerror = j;
+	i.onerror = () => (URL.revokeObjectURL(i.src), j(/* @__PURE__ */ new Error("this browser can't read this image format")));
 	i.src = URL.createObjectURL(f);
 });
 var b64 = (x) => x.split(",")[1] || "";
@@ -741,7 +741,7 @@ var loadMb = async () => {
 		sampleRate: 48e3,
 		bitrate: AUDIO_BPS
 	})) (await __vitePreload(async () => {
-		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-7jSJh11b.js");
+		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-kTu7ubye.js");
 		return { registerAacEncoder };
 	}, __vite__mapDeps([0,1]))).registerAacEncoder();
 	return mb = m;
@@ -873,7 +873,7 @@ async function toAttach(file, opts) {
 	if (file instanceof File) {
 		const name = file.name || "file", mime = (file.type || "application/octet-stream").toLowerCase();
 		if (isVideo(name, mime)) return compressVideo(file, opts);
-		if (/^image\//.test(mime) || /\.(png|jpe?g|webp|gif)$/i.test(name)) return {
+		if (/^image\//.test(mime) || /\.(png|jpe?g|webp|gif|avif|jxl)$/i.test(name)) return {
 			type: "image_url",
 			image_url: { url: await imgToWebp(file, 2048, 94, mime === "image/webp" || /\.webp$/i.test(name)) }
 		};

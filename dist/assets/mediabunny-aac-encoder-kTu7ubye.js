@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/__vite-browser-external-BTR76MVM.js","assets/src-CvA4YsQY.js"])))=>i.map(i=>d[i]);
-import { t as __vitePreload } from "./index-DZH5nKle.js";
+import { t as __vitePreload } from "./index-Ceaeycxj.js";
 import { CustomAudioEncoder, EncodedPacket, Logging, n as __require$1, r as __toESM, registerEncoder } from "./src-CvA4YsQY.js";
 //#region node_modules/@mediabunny/aac-encoder/dist/bundles/mediabunny-aac-encoder.mjs
 /*!
