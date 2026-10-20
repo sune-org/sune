@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-eDnqjtsm.js","assets/src-DlKePj_l.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-Ba2pbW6L.js","assets/src-DlKePj_l.js"])))=>i.map(i=>d[i]);
 import mathjax3 from "https://esm.sh/markdown-it-mathjax3";
 //#region \0vite/modulepreload-polyfill.js
 (function polyfill() {
@@ -161,7 +161,10 @@ var positionPopover = (a, p) => {
 	p.style.top = `${r.bottom + p.offsetHeight + 4 > window.innerHeight ? r.top - p.offsetHeight - 4 : r.bottom + 4}px`;
 	p.style.left = `${Math.max(8, Math.min(r.right - p.offsetWidth, window.innerWidth - p.offsetWidth - 8))}px`;
 };
-var sid = () => Date.now().toString(36) + "-" + [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, "0")).join("");
+var sid = () => btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16)))).replace(/[+/=]/g, (c) => ({
+	"+": "-",
+	"/": "_"
+})[c] || "");
 var fmtSize = (b) => {
 	const u = [
 		"B",
@@ -890,7 +893,7 @@ var loadMb = async () => {
 		sampleRate: 48e3,
 		bitrate: AUDIO_BPS
 	})) (await __vitePreload(async () => {
-		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-eDnqjtsm.js");
+		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-Ba2pbW6L.js");
 		return { registerAacEncoder };
 	}, __vite__mapDeps([0,1]))).registerAacEncoder();
 	return mb = m;
@@ -1561,6 +1564,7 @@ function msgRow(m) {
 }
 var addMessage = window.addMessage = function(m, track = true) {
 	m.id = m.id || gid();
+	if (m.role === "assistant") m.ts ??= Date.now();
 	if (!Array.isArray(m.content) && m.content != null) m.content = [{
 		type: "text",
 		text: String(m.content)
@@ -2054,6 +2058,7 @@ function reply() {
 	}, id = sid(), msg = Object.assign({
 		id,
 		role: "assistant",
+		ts: Date.now(),
 		content: [{
 			type: "text",
 			text: ""
