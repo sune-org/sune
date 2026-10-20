@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-CJQkl4H8.js","assets/src-DlKePj_l.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-eDnqjtsm.js","assets/src-DlKePj_l.js"])))=>i.map(i=>d[i]);
 import mathjax3 from "https://esm.sh/markdown-it-mathjax3";
 //#region \0vite/modulepreload-polyfill.js
 (function polyfill() {
@@ -161,7 +161,7 @@ var positionPopover = (a, p) => {
 	p.style.top = `${r.bottom + p.offsetHeight + 4 > window.innerHeight ? r.top - p.offsetHeight - 4 : r.bottom + 4}px`;
 	p.style.left = `${Math.max(8, Math.min(r.right - p.offsetWidth, window.innerWidth - p.offsetWidth - 8))}px`;
 };
-var sid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+var sid = () => Date.now().toString(36) + "-" + [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, "0")).join("");
 var fmtSize = (b) => {
 	const u = [
 		"B",
@@ -366,7 +366,6 @@ var buildBody = () => {
 	return b;
 };
 var live = /* @__PURE__ */ new Map();
-var wsUrl = (rid) => `${WS_URL}?rid=${encodeURIComponent(rid)}`;
 var threadKey = (tid) => (el.threadRepoInput.value.trim().startsWith("gh://") ? "rem_t_" : "t_") + tid;
 var saveLive = () => localStorage.setItem(LIVE_KEY, JSON.stringify([...live.values()].map((s) => [
 	s.rid,
@@ -434,10 +433,14 @@ function finish(s, note = "") {
 	if (onScreen(s)) el.composer.dispatchEvent(new CustomEvent("sune:newSuneResponse", { detail: { message: s.msg } }));
 }
 function sendStop(s) {
-	if (s.ws?.readyState === 1) return s.ws.send("{\"type\":\"stop\"}");
-	const w = new WebSocket(wsUrl(s.rid));
+	const m = JSON.stringify({
+		type: "stop",
+		rid: s.rid
+	});
+	if (s.ws?.readyState === 1) return s.ws.send(m);
+	const w = new WebSocket(WS_URL);
 	w.onopen = () => {
-		w.send("{\"type\":\"stop\"}");
+		w.send(m);
 		w.close();
 	};
 }
@@ -479,9 +482,10 @@ function onMessage(s, m) {
 function connect(s) {
 	if (s.done) return;
 	clearTimeout(s.timer);
-	const ws = s.ws = new WebSocket(wsUrl(s.rid));
+	const ws = s.ws = new WebSocket(WS_URL);
 	ws.onopen = () => ws.send(s.req || JSON.stringify({
 		type: "resume",
+		rid: s.rid,
 		after: s.msg.stream.seq
 	}));
 	ws.onmessage = (e) => {
@@ -547,6 +551,7 @@ function startReply(msg) {
 	}
 	s.req = JSON.stringify({
 		type: "begin",
+		rid: s.rid,
 		provider,
 		apiKey,
 		body: buildBody()
@@ -885,7 +890,7 @@ var loadMb = async () => {
 		sampleRate: 48e3,
 		bitrate: AUDIO_BPS
 	})) (await __vitePreload(async () => {
-		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-CJQkl4H8.js");
+		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-eDnqjtsm.js");
 		return { registerAacEncoder };
 	}, __vite__mapDeps([0,1]))).registerAacEncoder();
 	return mb = m;
