@@ -8,7 +8,8 @@ export const positionPopover = (a, p) => {
   p.style.top = `${r.bottom + p.offsetHeight + 4 > window.innerHeight ? r.top - p.offsetHeight - 4 : r.bottom + 4}px`;
   p.style.left = `${Math.max(8, Math.min(r.right - p.offsetWidth, window.innerWidth - p.offsetWidth - 8))}px`;
 };
-export const sid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+// Reply ids double as the proxy's run id, so after the ms timestamp come 128 random bits
+export const sid = () => Date.now().toString(36) + '-' + [...crypto.getRandomValues(new Uint8Array(16))].map(b => b.toString(16).padStart(2, '0')).join('');
 export const fmtSize = b => {
   const u = ['B', 'KB', 'MB', 'GB', 'TB'];
   let i = 0, x = b;

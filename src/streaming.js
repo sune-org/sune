@@ -53,7 +53,6 @@ export const buildBody=()=>{
    you're elsewhere, reconnect on drops, and get picked back up after a reload. A streaming message carries
    stream:{seq} (the last chunk it holds) until it's finished. */
 const live=new Map();
-const wsUrl=rid=>`${WS_URL}?rid=${encodeURIComponent(rid)}`;
 const threadKey=tid=>(el.threadRepoInput.value.trim().startsWith('gh://')?'rem_t_':'t_')+tid;
 const saveLive=()=>localStorage.setItem(LIVE_KEY,JSON.stringify([...live.values()].map(s=>[s.rid,s.tid,s.key])));
 const onScreen=s=>window.state.currentThreadId===s.tid&&window.state.messages.includes(s.msg);
@@ -102,8 +101,9 @@ function finish(s,note=''){
 
 // Stops the run server-side too; without an open socket a throwaway one carries the stop
 function sendStop(s){
-  if(s.ws?.readyState===1)return s.ws.send('{"type":"stop"}');
-  const w=new WebSocket(wsUrl(s.rid));w.onopen=()=>{w.send('{"type":"stop"}');w.close()}
+  const m=JSON.stringify({type:'stop',rid:s.rid});
+  if(s.ws?.readyState===1)return s.ws.send(m);
+  const w=new WebSocket(WS_URL);w.onopen=()=>{w.send(m);w.close()}
 }
 
 // For a deleted message or thread: stop without saving anything
@@ -130,8 +130,8 @@ function onMessage(s,m){
 
 function connect(s){
   if(s.done)return;clearTimeout(s.timer);
-  const ws=s.ws=new WebSocket(wsUrl(s.rid));
-  ws.onopen=()=>ws.send(s.req||JSON.stringify({type:'resume',after:s.msg.stream.seq}));
+  const ws=s.ws=new WebSocket(WS_URL);
+  ws.onopen=()=>ws.send(s.req||JSON.stringify({type:'resume',rid:s.rid,after:s.msg.stream.seq}));
   ws.onmessage=e=>{if(s.ws!==ws)return;let m;try{m=JSON.parse(e.data)}catch{return}onMessage(s,m)};
   ws.onclose=()=>{
     if(s.ws!==ws||s.done)return;s.ws=null;retry(s)
@@ -165,7 +165,7 @@ export function startReply(msg){
   const apiKey=provider==='openai'?USER.apiKeyOpenAI:provider==='google'?USER.apiKeyGoogle:provider==='claude'?USER.apiKeyClaude:USER.apiKeyOpenRouter;
   const s=track(msg,state.currentThreadId,threadKey(state.currentThreadId));
   if(!apiKey){msg.content[0].text=window.localDemoReply();return finish(s)}
-  s.req=JSON.stringify({type:'begin',provider,apiKey,body:buildBody()});
+  s.req=JSON.stringify({type:'begin',rid:s.rid,provider,apiKey,body:buildBody()});
   if(s.req.length>MAX_REQ-(1<<20))return finish(s,'\n\nThis request is over the server’s 100 MB limit.');
   connect(s);syncBtn()
 }
