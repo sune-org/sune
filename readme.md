@@ -59,7 +59,7 @@ Never lose a conversation again. Sune can sync all your threads to a GitHub repo
 
 5. **Sync**
    - Hit the **Sync** button after starting a new chat in there.
-   - **OK** = Push your local threads up to GitHub
-   - **Cancel** = Pull threads down from GitHub
+   - **Upload to GitHub** = Push your local threads up to GitHub
+   - **Download from GitHub** = Pull threads down from GitHub
 
 That's it. Your threads are now backed up as JSON files in your repo. You can sync across devices, never lose a chat, and even browse your conversations directly on GitHub.
