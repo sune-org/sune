@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-Ba2pbW6L.js","assets/src-DlKePj_l.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-BSX4X1e5.js","assets/src-DlKePj_l.js"])))=>i.map(i=>d[i]);
 import mathjax3 from "https://esm.sh/markdown-it-mathjax3";
 //#region \0vite/modulepreload-polyfill.js
 (function polyfill() {
@@ -140,7 +140,10 @@ var el = window.el = Object.fromEntries([
 	"suneSyncBadge",
 	"sunesSyncPopover",
 	"sunesSyncUploadBtn",
-	"sunesSyncDownloadBtn"
+	"sunesSyncDownloadBtn",
+	"threadsSyncPopover",
+	"threadsSyncUploadBtn",
+	"threadsSyncDownloadBtn"
 ].map((id) => [id, document.getElementById(id)]));
 //#endregion
 //#region src/utils.js
@@ -893,7 +896,7 @@ var loadMb = async () => {
 		sampleRate: 48e3,
 		bitrate: AUDIO_BPS
 	})) (await __vitePreload(async () => {
-		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-Ba2pbW6L.js");
+		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-BSX4X1e5.js");
 		return { registerAacEncoder };
 	}, __vite__mapDeps([0,1]))).registerAacEncoder();
 	return mb = m;
@@ -1749,6 +1752,14 @@ function showSunesSyncPopover(btn) {
 	icons();
 }
 var showSuneSyncPopover = showSunesSyncPopover;
+var hideThreadsSyncPopover = () => {
+	el.threadsSyncPopover.classList.add("hidden");
+};
+function showThreadsSyncPopover() {
+	el.threadsSyncPopover.classList.remove("hidden");
+	positionPopover(el.threadSyncBtn, el.threadsSyncPopover);
+	icons();
+}
 $(el.threadList).on("click", async (e) => {
 	const openBtn = e.target.closest("[data-open-thread]"), menuBtn = e.target.closest("[data-thread-menu]");
 	if (openBtn) {
@@ -2406,9 +2417,13 @@ $(window).on("resize", () => {
 	hideThreadPopover();
 	hideSunePopover();
 	hideSunesSyncPopover();
+	hideThreadsSyncPopover();
 });
 $(document).on("click", (e) => {
 	if (el.sunesSyncPopover && !el.sunesSyncPopover.classList.contains("hidden") && !el.sunesSyncPopover.contains(e.target) && !el.suneSyncBtn.contains(e.target)) hideSunesSyncPopover();
+});
+$(document).on("click", (e) => {
+	if (!el.threadsSyncPopover.classList.contains("hidden") && !el.threadsSyncPopover.contains(e.target) && !el.threadSyncBtn.contains(e.target)) hideThreadsSyncPopover();
 });
 var htmlTabs = {
 	index: ["htmlTab_index", "htmlEditor"],
@@ -2504,13 +2519,12 @@ $(el.threadFolderBtn).on("click", async () => {
 	await THREAD.save();
 	await renderThreads();
 });
-$(el.threadSyncBtn).on("click", async () => {
+var syncThreads = async (push) => {
 	const u = el.threadRepoInput.value.trim();
 	if (!u.startsWith("gh://")) return;
-	const mode = confirm("Sync Threads:\nOK = Upload (Push)\nCancel = Download (Pull)");
 	const info = parseGhUrl(u);
 	try {
-		if (mode) {
+		if (push) {
 			const remoteItems = await ghApi(`${info.apiPath}?ref=${info.branch}`) || [], remoteMap = {};
 			remoteItems.forEach((i) => {
 				const d = deserializeThreadName(i.name);
@@ -2573,6 +2587,18 @@ $(el.threadSyncBtn).on("click", async () => {
 	} catch (e) {
 		alert("Sync failed: " + e.message);
 	}
+};
+$(el.threadSyncBtn).on("click", (e) => {
+	e.stopPropagation();
+	if (el.threadRepoInput.value.trim().startsWith("gh://")) showThreadsSyncPopover();
+});
+$(el.threadsSyncUploadBtn).on("click", () => {
+	hideThreadsSyncPopover();
+	syncThreads(true);
+});
+$(el.threadsSyncDownloadBtn).on("click", () => {
+	hideThreadsSyncPopover();
+	syncThreads(false);
 });
 var suneSyncBusy = false;
 var checkSuneSyncStatus = async () => {
@@ -2906,6 +2932,8 @@ Object.assign(window, {
 	showSuneSyncPopover,
 	hideSunesSyncPopover,
 	showSunesSyncPopover,
+	hideThreadsSyncPopover,
+	showThreadsSyncPopover,
 	setSuneSyncStatus,
 	checkSuneSyncStatus,
 	performSuneDownload,
