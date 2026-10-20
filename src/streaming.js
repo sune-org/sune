@@ -141,7 +141,7 @@ function connect(s){
 // Backs off up to 15s; gives up after 30s if the run never started, else once the server can't still have it
 function retry(s){
   s.lostAt??=Date.now();
-  if(Date.now()-s.lostAt>(s.req?3e4:35*6e4))return stopReply(s,s.req?'\n\nCouldn’t reach the server.':'\n\n_Reply interrupted: lost the connection to it._');
+  if(Date.now()-s.lostAt>(s.req?3e4:105*6e4))return stopReply(s,s.req?'\n\nCouldn’t reach the server.':'\n\n_Reply interrupted: lost the connection to it._');
   clearTimeout(s.timer);s.timer=setTimeout(()=>connect(s),Math.min(15e3,500*2**s.tries++))
 }
 
