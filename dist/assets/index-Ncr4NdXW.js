@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-vZgc586K.js","assets/src-DlKePj_l.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-CJQkl4H8.js","assets/src-DlKePj_l.js"])))=>i.map(i=>d[i]);
 import mathjax3 from "https://esm.sh/markdown-it-mathjax3";
 //#region \0vite/modulepreload-polyfill.js
 (function polyfill() {
@@ -502,7 +502,7 @@ function connect(s) {
 }
 function retry(s) {
 	s.lostAt ??= Date.now();
-	if (Date.now() - s.lostAt > (s.req ? 3e4 : 35 * 6e4)) return stopReply(s, s.req ? "\n\nCouldn’t reach the server." : "\n\n_Reply interrupted: lost the connection to it._");
+	if (Date.now() - s.lostAt > (s.req ? 3e4 : 105 * 6e4)) return stopReply(s, s.req ? "\n\nCouldn’t reach the server." : "\n\n_Reply interrupted: lost the connection to it._");
 	clearTimeout(s.timer);
 	s.timer = setTimeout(() => connect(s), Math.min(15e3, 500 * 2 ** s.tries++));
 }
@@ -885,7 +885,7 @@ var loadMb = async () => {
 		sampleRate: 48e3,
 		bitrate: AUDIO_BPS
 	})) (await __vitePreload(async () => {
-		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-vZgc586K.js");
+		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-CJQkl4H8.js");
 		return { registerAacEncoder };
 	}, __vite__mapDeps([0,1]))).registerAacEncoder();
 	return mb = m;
