@@ -1,6 +1,6 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/__vite-browser-external-BTR76MVM.js","assets/src-CvA4YsQY.js"])))=>i.map(i=>d[i]);
-import { t as __vitePreload } from "./index-Ceaeycxj.js";
-import { CustomAudioEncoder, EncodedPacket, Logging, n as __require$1, r as __toESM, registerEncoder } from "./src-CvA4YsQY.js";
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/__vite-browser-external-ey8rhZ1c.js","assets/src-DlKePj_l.js"])))=>i.map(i=>d[i]);
+import { t as __vitePreload } from "./index-DRwc6SUn.js";
+import { CustomAudioEncoder, EncodedPacket, Logging, n as __require$1, r as __toESM, registerEncoder } from "./src-DlKePj_l.js";
 //#region node_modules/@mediabunny/aac-encoder/dist/bundles/mediabunny-aac-encoder.mjs
 /*!
 * Copyright (c) 2026-present, Vanilagy and contributors
@@ -192,7 +192,7 @@ async function inlineWorker(scriptText) {
 		let Worker3;
 		try {
 			Worker3 = (await __vitePreload(async () => {
-				const { Worker } = await import("./__vite-browser-external-BTR76MVM.js").then((m) => /* @__PURE__ */ __toESM(m.default, 1));
+				const { Worker } = await import("./__vite-browser-external-ey8rhZ1c.js").then((m) => /* @__PURE__ */ __toESM(m.default, 1));
 				return { Worker };
 			}, __vite__mapDeps([0,1]))).Worker;
 		} catch {

@@ -671,6 +671,14 @@ var isChromium = () => {
 	if (isChromiumCache !== null) return isChromiumCache;
 	return isChromiumCache = !!(typeof navigator !== "undefined" && (navigator.vendor?.includes("Google Inc") || /Chrome/.test(navigator.userAgent)));
 };
+var chromiumVersionCache = null;
+var getChromiumVersion = () => {
+	if (chromiumVersionCache !== null) return chromiumVersionCache;
+	if (typeof navigator === "undefined") return null;
+	const match = /\bChrome\/(\d+)/.exec(navigator.userAgent);
+	if (!match) return null;
+	return chromiumVersionCache = Number(match[1]);
+};
 var missingWebCodecsClassMessage = (className) => {
 	if (typeof globalThis.isSecureContext !== "undefined" && !globalThis.isSecureContext) return `${className} is not available in this environment; this may be because this page is running in an insecure context. Try serving your page over HTTPS or use localhost.`;
 	return `${className} is not available in this environment.`;
@@ -1466,7 +1474,7 @@ var EAC3_REDUCED_SAMPLE_RATES = [
 * License, v. 2.0. If a copy of the MPL was not distributed with this
 * file, You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-var VERSIONED_NAME = `Mediabunny v1.61.4`;
+var VERSIONED_NAME = `Mediabunny v1.61.6`;
 //#endregion
 //#region node_modules/mediabunny/dist/modules/src/codec-data.js
 /*!
@@ -5571,6 +5579,35 @@ var readIsomVariableInteger = (slice) => {
 	}
 	return result;
 };
+var readEsDescriptor = (slice) => {
+	if (readU8(slice) !== 3) throw new Error("Invalid esds: expected ES_Descriptor.");
+	readIsomVariableInteger(slice);
+	slice.skip(2);
+	const mixed = readU8(slice);
+	const streamDependenceFlag = (mixed & 128) !== 0;
+	const urlFlag = (mixed & 64) !== 0;
+	const ocrStreamFlag = (mixed & 32) !== 0;
+	if (streamDependenceFlag) slice.skip(2);
+	if (urlFlag) {
+		const urlLength = readU8(slice);
+		slice.skip(urlLength);
+	}
+	if (ocrStreamFlag) slice.skip(2);
+	if (readU8(slice) !== 4) throw new Error("Invalid esds: expected DecoderConfigDescriptor.");
+	const decoderConfigDescriptorLength = readIsomVariableInteger(slice);
+	const payloadStart = slice.filePos;
+	const objectTypeIndication = readU8(slice);
+	slice.skip(12);
+	let decoderSpecificInfo = null;
+	if (decoderConfigDescriptorLength > slice.filePos - payloadStart) {
+		if (readU8(slice) !== 5) throw new Error("Invalid esds: expected DecoderSpecificInfo.");
+		decoderSpecificInfo = readBytes(slice, readIsomVariableInteger(slice));
+	}
+	return {
+		objectTypeIndication,
+		decoderSpecificInfo
+	};
+};
 var readMetadataStringShort = (slice) => {
 	let stringLength = readU16Be(slice);
 	slice.skip(2);
@@ -6603,23 +6640,7 @@ var IsobmffDemuxer = class IsobmffDemuxer extends Demuxer {
 					const track = this.currentTrack;
 					if (!track || track.info?.type !== "audio") break;
 					slice.skip(4);
-					assert(readU8(slice) === 3);
-					readIsomVariableInteger(slice);
-					slice.skip(2);
-					const mixed = readU8(slice);
-					const streamDependenceFlag = (mixed & 128) !== 0;
-					const urlFlag = (mixed & 64) !== 0;
-					const ocrStreamFlag = (mixed & 32) !== 0;
-					if (streamDependenceFlag) slice.skip(2);
-					if (urlFlag) {
-						const urlLength = readU8(slice);
-						slice.skip(urlLength);
-					}
-					if (ocrStreamFlag) slice.skip(2);
-					assert(readU8(slice) === 4);
-					const decoderConfigDescriptorLength = readIsomVariableInteger(slice);
-					const payloadStart = slice.filePos;
-					const objectTypeIndication = readU8(slice);
+					const { objectTypeIndication, decoderSpecificInfo } = readEsDescriptor(slice);
 					if (objectTypeIndication === 64 || objectTypeIndication === 103) {
 						track.info.codec = "aac";
 						track.info.aacCodecInfo = {
@@ -6630,11 +6651,8 @@ var IsobmffDemuxer = class IsobmffDemuxer extends Demuxer {
 					else if (objectTypeIndication === 221) track.info.codec = "vorbis";
 					else if (objectTypeIndication === 169) track.info.codec = "dts";
 					else Logging._warn(`Unsupported audio codec (objectTypeIndication ${objectTypeIndication}) - discarding track.`);
-					slice.skip(12);
-					if (decoderConfigDescriptorLength > slice.filePos - payloadStart) {
-						assert(readU8(slice) === 5);
-						const decoderSpecificInfoLength = readIsomVariableInteger(slice);
-						track.info.codecDescription = readBytes(slice, decoderSpecificInfoLength);
+					if (decoderSpecificInfo) {
+						track.info.codecDescription = decoderSpecificInfo;
 						if (track.info.codec === "aac") {
 							const audioSpecificConfig = parseAacAudioSpecificConfig(track.info.codecDescription);
 							if (audioSpecificConfig.outputNumberOfChannels !== null) track.info.numberOfChannels = audioSpecificConfig.outputNumberOfChannels;
@@ -14192,7 +14210,10 @@ var SegmentedInputInputTrackBacking = class {
 				continue;
 			}
 			const firstPacket = await nextTrack._backing.getFirstPacket(options);
-			if (!firstPacket) return null;
+			if (!firstPacket) {
+				currentSegment = nextSegment;
+				continue;
+			}
 			return this.createAdjustedPacket(firstPacket, nextSegment, nextTrack);
 		}
 	}
@@ -14521,7 +14542,7 @@ var CustomPathedSource = class extends PathedSource {
 	/** @internal */
 	_dispose() {
 		if (this._root) this._root.free();
-		else if (this._rootRequest) this._rootRequest.then((ref) => ref.free());
+		else if (this._rootRequest) this._rootRequest.then((ref) => ref.free()).catch(() => {});
 	}
 };
 /**
@@ -16258,7 +16279,7 @@ var HlsSegmentedInput = class extends SegmentedInput {
 		return input;
 	}
 	async getLiveRefreshInterval() {
-		if (this.getRemainingWaitTimeMs() === 0) await this.runUpdateSegments();
+		if (!this.streamHasEnded && this.getRemainingWaitTimeMs() === 0) await this.runUpdateSegments();
 		return this.streamHasEnded ? null : this.refreshInterval;
 	}
 };
@@ -17751,7 +17772,13 @@ var VideoSample = class VideoSample {
 			this.squarePixelHeight = data.displayHeight;
 			this.timestamp = init?.timestamp ?? data.timestamp / 1e6;
 			this.duration = init?.duration ?? (data.duration ?? 0) / 1e6;
-			this.colorSpace = new VideoSampleColorSpace(data.colorSpace);
+			const { primaries, transfer, matrix, fullRange } = data.colorSpace;
+			this.colorSpace = new VideoSampleColorSpace({
+				primaries: primaries !== null && primaries in COLOR_PRIMARIES_MAP ? primaries : null,
+				transfer: transfer !== null && transfer in TRANSFER_CHARACTERISTICS_MAP ? transfer : null,
+				matrix: matrix !== null && matrix in MATRIX_COEFFICIENTS_MAP ? matrix : null,
+				fullRange
+			});
 		} else if (typeof HTMLImageElement !== "undefined" && data instanceof HTMLImageElement || typeof SVGImageElement !== "undefined" && data instanceof SVGImageElement || typeof ImageBitmap !== "undefined" && data instanceof ImageBitmap || typeof HTMLVideoElement !== "undefined" && data instanceof HTMLVideoElement || typeof HTMLCanvasElement !== "undefined" && data instanceof HTMLCanvasElement || typeof OffscreenCanvas !== "undefined" && data instanceof OffscreenCanvas) {
 			if (!init || typeof init !== "object") throw new TypeError("init must be an object.");
 			if (init.rotation !== void 0 && ![
@@ -19621,11 +19648,16 @@ var VIDEO_CODEC_QUANTIZER_SUPPORT = {
 		worst: 41,
 		best: 16
 	},
-	vp9: {
+	vp9: (getChromiumVersion() ?? Infinity) < 145 ? {
 		min: 0,
 		max: 63,
 		worst: 52,
 		best: 20
+	} : {
+		min: 0,
+		max: 255,
+		worst: 208,
+		best: 80
 	},
 	av1: {
 		min: 0,
@@ -20297,10 +20329,12 @@ var EncodedPacketSink = class {
 		};
 	}
 };
+var MAX_QUEUE_SIZE = 4;
 var DecoderWrapper = class {
 	constructor(onSample, onError) {
 		this.onSample = onSample;
 		this.onError = onError;
+		this.onDequeue = null;
 	}
 };
 /**
@@ -20357,14 +20391,14 @@ var BaseMediaSampleSink = class {
 					onQueueNotEmpty();
 				}
 			});
+			decoder.onDequeue = () => onQueueDequeue();
 			const packetSink = this._createPacketSink();
 			const keyPacket = await packetSink.getKeyPacket(startTimestamp, packetRetrievalOptions) ?? await packetSink.getFirstKeyPacket(packetRetrievalOptions);
 			let currentPacket = keyPacket;
 			const packets = packetSink.packets(keyPacket ?? void 0, void 0, packetRetrievalOptions);
 			await packets.next();
 			while (currentPacket && !ended && !this._track.input._disposed) {
-				const maxQueueSize = computeMaxQueueSize(sampleQueue.length);
-				if (sampleQueue.length + decoder.getDecodeQueueSize() > maxQueueSize) {
+				if (sampleQueue.length + decoder.getDecodeQueueSize() >= MAX_QUEUE_SIZE) {
 					({promise: queueDequeue, resolve: onQueueDequeue} = promiseWithResolvers());
 					await queueDequeue;
 					continue;
@@ -20376,7 +20410,10 @@ var BaseMediaSampleSink = class {
 			}
 			await packets.return();
 			if (!terminated && !this._track.input._disposed) await decoder.flush();
-			if (!firstSampleQueued && lastSample) sampleQueue.push(lastSample);
+			if (!firstSampleQueued && lastSample) {
+				sampleQueue.push(lastSample);
+				lastSample = null;
+			}
 			decoderIsFlushed = true;
 			onQueueNotEmpty();
 		})().catch((error) => {
@@ -20485,6 +20522,7 @@ var BaseMediaSampleSink = class {
 					onQueueNotEmpty();
 				}
 			});
+			decoder.onDequeue = () => onQueueDequeue();
 			const packetSink = this._createPacketSink();
 			let lastPacket = null;
 			let lastKeyPacket = null;
@@ -20495,8 +20533,7 @@ var BaseMediaSampleSink = class {
 				let currentPacket = lastKeyPacket;
 				decoder.decode(currentPacket);
 				while (currentPacket.sequenceNumber < maxSequenceNumber) {
-					const maxQueueSize = computeMaxQueueSize(sampleQueue.length);
-					while (sampleQueue.length + decoder.getDecodeQueueSize() > maxQueueSize && !terminated) {
+					while (sampleQueue.length + decoder.getDecodeQueueSize() >= MAX_QUEUE_SIZE && !terminated) {
 						({promise: queueDequeue, resolve: onQueueDequeue} = promiseWithResolvers());
 						await queueDequeue;
 					}
@@ -20603,9 +20640,6 @@ var BaseMediaSampleSink = class {
 		};
 	}
 };
-var computeMaxQueueSize = (decodedSampleQueueSize) => {
-	return decodedSampleQueueSize === 0 ? 40 : 8;
-};
 var VideoDecoderWrapper = class extends DecoderWrapper {
 	constructor(onSample, onError, codec, decoderConfig, rotation, flip, timeResolution) {
 		super(onSample, onError);
@@ -20700,6 +20734,9 @@ var VideoDecoderWrapper = class extends DecoderWrapper {
 					this.onError(error);
 				}
 			});
+			this.decoder.addEventListener("dequeue", () => {
+				this.onDequeue?.();
+			});
 			this.decoder.configure(this.decoderConfig);
 		}
 	}
@@ -20717,7 +20754,10 @@ var VideoDecoderWrapper = class extends DecoderWrapper {
 		}
 		if (this.customDecoder) {
 			this.customDecoderQueueSize++;
-			this.customDecoderCallSerializer.call(() => this.customDecoder.decode(packet)).catch((error) => this.onError(error)).finally(() => this.customDecoderQueueSize--);
+			this.customDecoderCallSerializer.call(() => this.customDecoder.decode(packet)).catch((error) => this.onError(error)).finally(() => {
+				this.customDecoderQueueSize--;
+				this.onDequeue?.();
+			});
 		} else {
 			assert(this.decoder);
 			if (!isWebKit()) insertSorted(this.inputTimestamps, packet.timestamp, (x) => x);
@@ -20787,6 +20827,9 @@ var VideoDecoderWrapper = class extends DecoderWrapper {
 					error.stack = stack;
 					this.onError(error);
 				}
+			});
+			this.alphaDecoder.addEventListener("dequeue", () => {
+				this.onDequeue?.();
 			});
 			this.alphaDecoder.configure({
 				...this.decoderConfig,
@@ -21416,6 +21459,9 @@ var AudioDecoderWrapper = class extends DecoderWrapper {
 					this.onError(error);
 				}
 			});
+			this.decoder.addEventListener("dequeue", () => {
+				this.onDequeue?.();
+			});
 			this.decoder.configure(decoderConfig);
 		}
 	}
@@ -21429,7 +21475,10 @@ var AudioDecoderWrapper = class extends DecoderWrapper {
 	decode(packet) {
 		if (this.customDecoder) {
 			this.customDecoderQueueSize++;
-			this.customDecoderCallSerializer.call(() => this.customDecoder.decode(packet)).catch((error) => this.onError(error)).finally(() => this.customDecoderQueueSize--);
+			this.customDecoderCallSerializer.call(() => this.customDecoder.decode(packet)).catch((error) => this.onError(error)).finally(() => {
+				this.customDecoderQueueSize--;
+				this.onDequeue?.();
+			});
 		} else {
 			assert(this.decoder);
 			this.expectedFirstTimestamp ??= packet.timestamp;
@@ -22736,6 +22785,10 @@ var Input = class Input extends EventEmitter {
 		if (cachedPromiseEntry) return cachedPromiseEntry.promise.then((x) => x.sourceRef.source.ref());
 		const promise = (async () => {
 			const sourceRef = await this._getSourceUncached(request);
+			if (this._disposed) {
+				sourceRef.free();
+				throw new InputDisposedError();
+			}
 			if (arrayCount(this._sourceCache, (x) => x.cacheGroup === cacheGroup && x.sourceRef.source._refCount === 1) >= 4) {
 				const minAgeIndex = arrayArgmin(this._sourceCache, (x) => x.cacheGroup === cacheGroup && x.sourceRef.source._refCount === 1 ? x.age : Infinity);
 				assert(minAgeIndex !== -1);
@@ -30023,6 +30076,7 @@ var VideoEncoderWrapper = class {
 		this.muxer = null;
 		this.lastMultipleOfKeyFrameInterval = -1;
 		this.emittedEncoderPackets = 0;
+		this.chunkTimestampsAreShiftedByDuration = false;
 		this.codedWidth = null;
 		this.codedHeight = null;
 		this.outputWidth = null;
@@ -30316,6 +30370,7 @@ var VideoEncoderWrapper = class {
 				await this.customEncoder.init();
 			} else {
 				this.encoderConfig = encoderConfig;
+				if (this.encodingConfig.codec === "avc" && isFirefox()) this.chunkTimestampsAreShiftedByDuration = await detectAvcChunkTimestampShift();
 				this.createWebCodecsEncoders();
 			}
 			assert(this.source._connectedTrack);
@@ -30403,24 +30458,47 @@ var VideoEncoderWrapper = class {
 		let packet = EncodedPacket.fromEncodedChunk(colorChunk, sideData);
 		const encoderConfig = this.encoderConfig;
 		assert(encoderConfig);
-		if (meta?.decoderConfig) meta.decoderConfig.codec = extractVideoCodecString({
-			width: encoderConfig.width,
-			height: encoderConfig.height,
-			codec: this.encodingConfig.codec,
-			codecDescription: meta.decoderConfig.description ? toUint8Array(meta.decoderConfig.description) : null,
-			colorSpace: meta.decoderConfig.colorSpace ?? null,
-			avcType: encoderConfig.codec.includes("avc1.") ? 1 : encoderConfig.codec.includes("avc3.") ? 3 : null,
-			avcCodecInfo: this.encodingConfig.codec === "avc" && !meta.decoderConfig.description ? extractAvcDecoderConfigurationRecord(packet.data) : null,
-			hevcCodecInfo: this.encodingConfig.codec === "hevc" && !meta.decoderConfig.description ? extractHevcDecoderConfigurationRecord(packet.data) : null,
-			vp9CodecInfo: this.encodingConfig.codec === "vp9" ? extractVp9CodecInfoFromPacket(packet.data) : null,
-			av1CodecInfo: this.encodingConfig.codec === "av1" ? extractAv1CodecInfoFromPacket(packet.data) : null,
-			proresFormat: null
-		});
-		const preciseTimingIndex = binarySearchLessOrEqual(this.preciseTimings, colorChunk.timestamp, (x) => x.microsecondTimestamp);
+		if (meta?.decoderConfig) {
+			meta.decoderConfig.codec = extractVideoCodecString({
+				width: encoderConfig.width,
+				height: encoderConfig.height,
+				codec: this.encodingConfig.codec,
+				codecDescription: meta.decoderConfig.description ? toUint8Array(meta.decoderConfig.description) : null,
+				colorSpace: meta.decoderConfig.colorSpace ?? null,
+				avcType: encoderConfig.codec.includes("avc1.") ? 1 : encoderConfig.codec.includes("avc3.") ? 3 : null,
+				avcCodecInfo: this.encodingConfig.codec === "avc" && !meta.decoderConfig.description ? extractAvcDecoderConfigurationRecord(packet.data) : null,
+				hevcCodecInfo: this.encodingConfig.codec === "hevc" && !meta.decoderConfig.description ? extractHevcDecoderConfigurationRecord(packet.data) : null,
+				vp9CodecInfo: this.encodingConfig.codec === "vp9" ? extractVp9CodecInfoFromPacket(packet.data) : null,
+				av1CodecInfo: this.encodingConfig.codec === "av1" ? extractAv1CodecInfoFromPacket(packet.data) : null,
+				proresFormat: null
+			});
+			if (this.encodingConfig.codec === "avc" && meta.decoderConfig.description && isFirefox()) {
+				const parsed = deserializeAvcDecoderConfigurationRecord(toUint8Array(meta.decoderConfig.description));
+				let sps = parsed?.sequenceParameterSets[0];
+				if (sps && sps[0] === sps[1]) {
+					assert(parsed);
+					sps = sps.subarray(1);
+					let pps = parsed.pictureParameterSets[0];
+					if (pps) pps = pps.subarray(1);
+					const record = serializeAvcDecoderConfigurationRecord({
+						...parsed,
+						sequenceParameterSets: [sps],
+						pictureParameterSets: pps ? [pps] : []
+					});
+					meta.decoderConfig.description = record;
+				}
+			}
+		}
+		let microsecondTimestamp = colorChunk.timestamp;
+		if (this.chunkTimestampsAreShiftedByDuration) {
+			microsecondTimestamp -= colorChunk.duration ?? 0;
+			packet = packet.clone({ timestamp: microsecondTimestamp / 1e6 });
+		}
+		const preciseTimingIndex = binarySearchLessOrEqual(this.preciseTimings, microsecondTimestamp, (x) => x.microsecondTimestamp);
 		const entry = preciseTimingIndex !== -1 ? this.preciseTimings[preciseTimingIndex] : null;
 		let actualType = null;
 		if (this.emittedEncoderPackets === 0 && packet.type === "delta" && meta?.decoderConfig) actualType = determineVideoPacketType(this.encodingConfig.codec, meta.decoderConfig, packet.data);
-		if (entry && entry.microsecondTimestamp === colorChunk.timestamp || actualType !== null) packet = packet.clone({
+		if (entry && entry.microsecondTimestamp === microsecondTimestamp || actualType !== null) packet = packet.clone({
 			timestamp: entry?.timestampIsValid ? entry.timestamp : void 0,
 			duration: entry?.durationIsValid ? entry.duration : void 0,
 			type: actualType ?? void 0
@@ -30483,6 +30561,40 @@ var VideoEncoderWrapper = class {
 	checkForEncoderError() {
 		if (this.errorSet) throw this.error;
 	}
+};
+var avcChunkTimestampShiftPromise = null;
+var detectAvcChunkTimestampShift = () => {
+	return avcChunkTimestampShiftPromise ??= (async () => {
+		let chunkTimestamp = null;
+		const encoder = new VideoEncoder({
+			output: (chunk) => {
+				chunkTimestamp ??= chunk.timestamp;
+			},
+			error: () => {}
+		});
+		try {
+			encoder.configure({
+				codec: "avc1.64001f",
+				width: 1280,
+				height: 720
+			});
+			const frame = new VideoFrame(new Uint8Array(1280 * 720 * 1.5), {
+				format: "I420",
+				codedWidth: 1280,
+				codedHeight: 720,
+				timestamp: 0,
+				duration: 500
+			});
+			encoder.encode(frame, { keyFrame: true });
+			frame.close();
+			await encoder.flush();
+		} catch {
+			return false;
+		} finally {
+			if (encoder.state !== "closed") encoder.close();
+		}
+		return chunkTimestamp === 500;
+	})();
 };
 var splitterWorkerUrl = null;
 /** Utility class for splitting a composite frame into separate color and alpha parts on the CPU in a worker. */
@@ -31249,6 +31361,10 @@ var AudioEncoderWrapper = class {
 				this.encoder = new AudioEncoder({
 					output: (chunk, meta) => {
 						if (this.encodingConfig.codec === "aac" && meta?.decoderConfig) {
+							if (meta.decoderConfig.description && meta.decoderConfig.description.byteLength > 0 && toUint8Array(meta.decoderConfig.description)[0] === 3) {
+								const { decoderSpecificInfo } = readEsDescriptor(FileSlice.tempFromBytes(toUint8Array(meta.decoderConfig.description)));
+								meta.decoderConfig.description = decoderSpecificInfo ?? void 0;
+							}
 							let needsDescriptionOverwrite = false;
 							if (!meta.decoderConfig.description || meta.decoderConfig.description.byteLength < 2) needsDescriptionOverwrite = true;
 							else needsDescriptionOverwrite = parseAacAudioSpecificConfig(toUint8Array(meta.decoderConfig.description)).objectType === 0;
@@ -34151,6 +34267,8 @@ var Conversion = class Conversion {
 		this._computeProgress = false;
 		/** @internal */
 		this._lastProgress = 0;
+		/** @internal */
+		this._lastProcessedTime = 0;
 		/**
 		* Whether this conversion, as it has been configured, is valid and can be executed. If this field is `false`, check
 		* the `discardedTracks` field for reasons. Composable conversions are always valid, even if they utilize
@@ -34409,10 +34527,7 @@ Tracks were discarded because your environment is not able to encode any of the 
 		this._state = isDone ? "done" : "idle";
 		if (isDone) {
 			if (!this._composable) await this.output.finalize();
-			if (this._computeProgress) {
-				const minTimestamp = Math.min(...this._maxTimestamps.values());
-				this.onProgress?.(1, minTimestamp);
-			}
+			if (this._computeProgress) this.onProgress?.(1, this._lastProcessedTime);
 		}
 	}
 	/**
@@ -34545,13 +34660,13 @@ Tracks were discarded because your environment is not able to encode any of the 
 						sideData: alpha === "discard" ? {} : packet.sideData,
 						type: packetType
 					});
-					this._reportProgress(outputTrackId, modifiedPacket.timestamp + modifiedPacket.duration);
+					this._updateProgress(outputTrackId, modifiedPacket.timestamp + modifiedPacket.duration);
 					await source.add(modifiedPacket, meta);
 					if (this._synchronizer.shouldWait(outputTrackId, modifiedPacket.timestamp)) await this._synchronizer.wait(modifiedPacket.timestamp);
 					await this._checkpoint(pump, modifiedPacket.timestamp);
 				}
 				source.close();
-				this._synchronizer.closeTrack(outputTrackId);
+				this._closeTrack(outputTrackId);
 			});
 		} else {
 			if (!await track.canDecode()) {
@@ -34657,7 +34772,7 @@ Tracks were discarded because your environment is not able to encode any of the 
 						if (clampedStartTimestamp >= clampedEndTimestamp) continue;
 						sample.setTimestamp(clampedStartTimestamp + this._timestampOffset);
 						sample.setDuration(clampedEndTimestamp - clampedStartTimestamp);
-						this._reportProgress(outputTrackId, sample.timestamp + sample.duration);
+						this._updateProgress(outputTrackId, sample.timestamp + sample.duration);
 						await source.add(sample);
 						sample.close();
 						if (lastSampleTimestamp !== null) {
@@ -34672,7 +34787,7 @@ Tracks were discarded because your environment is not able to encode any of the 
 					}
 				}
 				source.close();
-				this._synchronizer.closeTrack(outputTrackId);
+				this._closeTrack(outputTrackId);
 			});
 		}
 		let ownGroup = null;
@@ -34773,13 +34888,13 @@ Tracks were discarded because your environment is not able to encode any of the 
 						timestamp: packetTimestamp,
 						duration: packet.duration
 					});
-					this._reportProgress(outputTrackId, modifiedPacket.timestamp + modifiedPacket.duration);
+					this._updateProgress(outputTrackId, modifiedPacket.timestamp + modifiedPacket.duration);
 					await source.add(modifiedPacket, meta);
 					if (this._synchronizer.shouldWait(outputTrackId, modifiedPacket.timestamp)) await this._synchronizer.wait(modifiedPacket.timestamp);
 					await this._checkpoint(pump, modifiedPacket.timestamp);
 				}
 				source.close();
-				this._synchronizer.closeTrack(outputTrackId);
+				this._closeTrack(outputTrackId);
 			});
 		} else {
 			if (!await track.canDecode()) {
@@ -34905,7 +35020,7 @@ Tracks were discarded because your environment is not able to encode any of the 
 					}
 				}
 				source.close();
-				this._synchronizer.closeTrack(outputTrackId);
+				this._closeTrack(outputTrackId);
 			});
 		}
 		let ownGroup = null;
@@ -34929,7 +35044,7 @@ Tracks were discarded because your environment is not able to encode any of the 
 	}
 	/** @internal */
 	async _registerAudioSample(pump, sample, source, outputTrackId, getLastSampleTimestamp) {
-		this._reportProgress(outputTrackId, sample.timestamp + sample.duration);
+		this._updateProgress(outputTrackId, sample.timestamp + sample.duration);
 		await source.add(sample);
 		sample.close();
 		const lastSampleTimestamp = getLastSampleTimestamp();
@@ -34965,12 +35080,24 @@ Tracks were discarded because your environment is not able to encode any of the 
 		}
 	}
 	/** @internal */
-	_reportProgress(trackId, endTimestamp) {
+	_closeTrack(id) {
+		this._synchronizer.closeTrack(id);
+		this._maxTimestamps.delete(id);
+		this._reportProgress();
+	}
+	/** @internal */
+	_updateProgress(trackId, endTimestamp) {
 		if (!this._computeProgress) return;
-		assert(this._totalDuration !== null);
 		this._maxTimestamps.set(trackId, Math.max(endTimestamp, this._maxTimestamps.get(trackId)));
+		this._reportProgress();
+	}
+	/** @internal */
+	_reportProgress() {
+		if (!this._computeProgress || this._maxTimestamps.size === 0) return;
+		assert(this._totalDuration !== null);
 		const minTimestamp = Math.min(...this._maxTimestamps.values());
 		const newProgress = clamp(minTimestamp / this._totalDuration, 0, 1);
+		this._lastProcessedTime = minTimestamp;
 		if (newProgress !== this._lastProgress) {
 			this._lastProgress = newProgress;
 			this.onProgress?.(newProgress, minTimestamp);
