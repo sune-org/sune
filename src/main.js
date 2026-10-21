@@ -146,7 +146,7 @@ $(el.composer).on('submit',async e=>{e.preventDefault();if(state.busy||sending||
 let jars={html:null,extension:null};
 const ensureJars=async()=>{
   if(jars.html&&jars.extension)return jars;
-  const mod=await import('https://medv.io/codejar/codejar.js'),CodeJar=mod.CodeJar||mod.default;
+  const mod=await import('https://cdn.jsdelivr.net/npm/codejar@4.3.0/dist/codejar.js'),CodeJar=mod.CodeJar||mod.default;
   const hl=e=>{
     const code=e.innerText;
     e.innerHTML=hljs.highlight(code,{language:'xml'}).value;

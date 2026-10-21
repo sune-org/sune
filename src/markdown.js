@@ -1,4 +1,4 @@
-import mathjax3 from 'https://esm.sh/markdown-it-mathjax3';
+import mathjax3 from 'https://esm.sh/markdown-it-mathjax3@5.2.0';
 import { copyToClipboard } from './utils.js';
 
 export const md = window.md = window.markdownit({ html: false, linkify: true, typographer: true, breaks: true }).use(mathjax3);
