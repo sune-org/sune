@@ -1,5 +1,5 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-BSX4X1e5.js","assets/src-DlKePj_l.js"])))=>i.map(i=>d[i]);
-import mathjax3 from "https://esm.sh/markdown-it-mathjax3";
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-CvIaGQWe.js","assets/src-DlKePj_l.js"])))=>i.map(i=>d[i]);
+import mathjax3 from "https://esm.sh/markdown-it-mathjax3@5.2.0";
 //#region \0vite/modulepreload-polyfill.js
 (function polyfill() {
 	const relList = document.createElement("link").relList;
@@ -896,7 +896,7 @@ var loadMb = async () => {
 		sampleRate: 48e3,
 		bitrate: AUDIO_BPS
 	})) (await __vitePreload(async () => {
-		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-BSX4X1e5.js");
+		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-CvIaGQWe.js");
 		return { registerAacEncoder };
 	}, __vite__mapDeps([0,1]))).registerAacEncoder();
 	return mb = m;
@@ -2129,7 +2129,7 @@ var jars = {
 };
 var ensureJars = async () => {
 	if (jars.html && jars.extension) return jars;
-	const mod = await __vitePreload(() => import("https://medv.io/codejar/codejar.js"), []), CodeJar = mod.CodeJar || mod.default;
+	const mod = await __vitePreload(() => import("https://cdn.jsdelivr.net/npm/codejar@4.3.0/dist/codejar.js"), []), CodeJar = mod.CodeJar || mod.default;
 	const hl = (e) => {
 		const code = e.innerText;
 		e.innerHTML = hljs.highlight(code, { language: "xml" }).value;
