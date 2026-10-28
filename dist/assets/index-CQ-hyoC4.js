@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-laB6T72z.js","assets/src-DlKePj_l.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-nnOl37BH.js","assets/src-DlKePj_l.js"])))=>i.map(i=>d[i]);
 import mathjax3 from "https://esm.sh/markdown-it-mathjax3@5.2.0";
 //#region \0vite/modulepreload-polyfill.js
 (function polyfill() {
@@ -896,7 +896,7 @@ var loadMb = async () => {
 		sampleRate: 48e3,
 		bitrate: AUDIO_BPS
 	})) (await __vitePreload(async () => {
-		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-laB6T72z.js");
+		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-nnOl37BH.js");
 		return { registerAacEncoder };
 	}, __vite__mapDeps([0,1]))).registerAacEncoder();
 	return mb = m;
@@ -2803,13 +2803,21 @@ $(el.accountSettingsForm).on("submit", (e) => {
 	renderUserUI();
 	closeAccountSettings();
 });
-$(el.accountPanelAPI).on("click", (e) => {
-	const b = e.target.closest("[data-reveal-for]");
-	if (!b) return;
-	const i = document.getElementById(b.dataset.revealFor);
-	if (!i) return;
-	b.innerHTML = `<i data-lucide="${i.classList.toggle("key-mask") ? "eye" : "eye-off"}" class="h-4 w-4"></i>`;
+var setIco = (b, n) => {
+	b.innerHTML = `<i data-lucide="${n}" class="h-4 w-4"></i>`;
 	icons();
+};
+$(el.accountPanelAPI).on("click", async (e) => {
+	const c = e.target.closest("[data-copy-for]");
+	if (c) {
+		if (await copyToClipboard(document.getElementById(c.dataset.copyFor)?.value || "")) setIco(c, "check"), setTimeout(() => setIco(c, "copy"), 1200);
+		return;
+	}
+	const b = e.target.closest("[data-reveal-for]"), i = b && document.getElementById(b.dataset.revealFor);
+	if (!i) return;
+	const p = i.type === "password";
+	i.type = p ? "text" : "password";
+	setIco(b, p ? "eye-off" : "eye");
 });
 el.accountTabGeneral.onclick = () => showAccountTab("General");
 el.accountTabAPI.onclick = () => showAccountTab("API");

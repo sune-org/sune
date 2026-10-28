@@ -7,7 +7,6 @@ html,body{overscroll-behavior-y:contain;font-family:'Assistant',sans-serif}
 .msg-avatar{font-size:16px}
 .menu-card{position:fixed;z-index:60;min-width:12rem;border-radius:0.75rem;border:1px solid #e5e7eb;background:#fff;box-shadow:0 10px 20px rgba(0,0,0,.08)}
 .menu-item{width:100%;text-align:left;padding:.5rem .75rem;font-size:0.875rem;display:flex;align-items:center;gap:.5rem}
-.key-mask{-webkit-text-security:disc}
 #attachBtn{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 #htmlEditor,#extensionHtmlEditor,#jsonSchemaEditor{outline:none;white-space:pre!important;font-size:11px;line-height:1.5;}
 :not(pre)>code{font-size:85%;padding:.2em .4em;margin:0;border-radius:6px;background-color:rgba(175,184,193,0.2)}
