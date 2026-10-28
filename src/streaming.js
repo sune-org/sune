@@ -15,7 +15,7 @@ export const buildBody=()=>{
     msgs.push({role:'system', content: mPrompt});
   }
 
-  const modelName=SUNE.model.replace(/^(or:|oai:|g:|cla:)/,'').replace(/^[^/]*\//,'').replace(/(?::online|:free)+$/,'');
+  const modelName=SUNE.model.replace(/^(or:|oai:|g:|ant:)/,'').replace(/^[^/]*\//,'').replace(/(?::online|:free)+$/,'');
   const sPrompt = (SUNE.system_prompt || '').trim().replaceAll('{{model_name}}',()=>modelName);
   if(sPrompt) {
     msgs.push({role:'system', content: sPrompt});
@@ -43,7 +43,7 @@ export const buildBody=()=>{
     }
   }
 
-  const b=payloadWithSampling({model:SUNE.model.replace(/^(or:|oai:|g:|cla:)/,''),messages:msgs,stream:true});
+  const b=payloadWithSampling({model:SUNE.model.replace(/^(or:|oai:|g:|ant:)/,''),messages:msgs,stream:true});
   b.reasoning={...(SUNE.reasoning_effort&&SUNE.reasoning_effort!=='default'?{effort:SUNE.reasoning_effort}:{}),exclude:!SUNE.include_thoughts};
   if(SUNE.img_output){b.modalities=['image'];b.image_config={aspect_ratio:SUNE.aspect_ratio||'1:1',image_size:SUNE.image_size||'1K'}}
   return b
@@ -161,8 +161,8 @@ function track(msg,tid,key){
 
 export function startReply(msg){
   const {USER,SUNE,state}=window;
-  const model=SUNE.model,provider=model.startsWith('oai:')?'openai':model.startsWith('g:')?'google':model.startsWith('cla:')?'claude':model.startsWith('or:')?'openrouter':USER.provider;
-  const apiKey=provider==='openai'?USER.apiKeyOpenAI:provider==='google'?USER.apiKeyGoogle:provider==='claude'?USER.apiKeyClaude:USER.apiKeyOpenRouter;
+  const model=SUNE.model,provider=model.startsWith('oai:')?'openai':model.startsWith('g:')?'google':model.startsWith('ant:')?'anthropic':model.startsWith('or:')?'openrouter':USER.provider;
+  const apiKey=provider==='openai'?USER.apiKeyOpenAI:provider==='google'?USER.apiKeyGoogle:provider==='anthropic'?USER.apiKeyAnthropic:USER.apiKeyOpenRouter;
   const s=track(msg,state.currentThreadId,threadKey(state.currentThreadId));
   if(!apiKey){msg.content[0].text=window.localDemoReply();return finish(s)}
   s.req=JSON.stringify({type:'begin',rid:s.rid,provider,apiKey,body:buildBody()});

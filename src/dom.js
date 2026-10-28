@@ -13,7 +13,7 @@ export const el = window.el = Object.fromEntries(
     'attachBtn','attachBadge','attachPopover','fileInput','htmlEditor','extensionHtmlEditor',
     'htmlTab_index','htmlTab_extension','suneHtml','accountSettingsModal','accountSettingsForm',
     'closeAccountSettings','cancelAccountSettings','set_master_prompt','set_provider',
-    'set_api_key_or','set_api_key_oai','set_api_key_g','set_api_key_claude','set_api_key_cf',
+    'set_api_key_or','set_api_key_oai','set_api_key_g','set_api_key_ant','set_api_key_cf',
     'set_api_key_custom1','set_title_model','copySystemPrompt','pasteSystemPrompt','copyHTML','pasteHTML',
     'accountTabGeneral','accountTabAPI','accountPanelGeneral','accountPanelAPI','set_gh_token',
     'importAccountSettings','exportAccountSettings',

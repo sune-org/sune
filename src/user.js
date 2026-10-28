@@ -5,26 +5,26 @@ export const USER = {
   get avatar() { return localStorage.getItem('user_avatar') || ''; },
   set avatar(v) { localStorage.setItem('user_avatar', v || ''); },
   get provider() { return localStorage.getItem('provider') || 'openrouter'; },
-  set provider(v) { localStorage.setItem('provider', ['openai', 'google', 'claude'].includes(v) ? v : 'openrouter'); },
+  set provider(v) { localStorage.setItem('provider', ['openai', 'google', 'anthropic'].includes(v) ? v : 'openrouter'); },
   get apiKeyOpenRouter() { return localStorage.getItem('openrouter_api_key') || ''; },
   set apiKeyOpenRouter(v) { localStorage.setItem('openrouter_api_key', v || ''); },
   get apiKeyOpenAI() { return localStorage.getItem('openai_api_key') || ''; },
   set apiKeyOpenAI(v) { localStorage.setItem('openai_api_key', v || ''); },
   get apiKeyGoogle() { return localStorage.getItem('google_api_key') || ''; },
   set apiKeyGoogle(v) { localStorage.setItem('google_api_key', v || ''); },
-  get apiKeyClaude() { return localStorage.getItem('claude_api_key') || ''; },
-  set apiKeyClaude(v) { localStorage.setItem('claude_api_key', v || ''); },
+  get apiKeyAnthropic() { return localStorage.getItem('anthropic_api_key') || ''; },
+  set apiKeyAnthropic(v) { localStorage.setItem('anthropic_api_key', v || ''); },
   get apiKeyCloudflare() { return localStorage.getItem('cloudflare_api_key') || ''; },
   set apiKeyCloudflare(v) { localStorage.setItem('cloudflare_api_key', v || ''); },
   get apiKey() {
     const p = this.provider;
-    return p === 'openai' ? this.apiKeyOpenAI : p === 'google' ? this.apiKeyGoogle : p === 'claude' ? this.apiKeyClaude : this.apiKeyOpenRouter;
+    return p === 'openai' ? this.apiKeyOpenAI : p === 'google' ? this.apiKeyGoogle : p === 'anthropic' ? this.apiKeyAnthropic : this.apiKeyOpenRouter;
   },
   set apiKey(v) {
     const p = this.provider;
     if (p === 'openai') this.apiKeyOpenAI = v;
     else if (p === 'google') this.apiKeyGoogle = v;
-    else if (p === 'claude') this.apiKeyClaude = v;
+    else if (p === 'anthropic') this.apiKeyAnthropic = v;
     else this.apiKeyOpenRouter = v;
   },
   get masterPrompt() { return localStorage.getItem('master_prompt') || 'Always respond using markdown.'; },
