@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-CvIaGQWe.js","assets/src-DlKePj_l.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-laB6T72z.js","assets/src-DlKePj_l.js"])))=>i.map(i=>d[i]);
 import mathjax3 from "https://esm.sh/markdown-it-mathjax3@5.2.0";
 //#region \0vite/modulepreload-polyfill.js
 (function polyfill() {
@@ -109,7 +109,7 @@ var el = window.el = Object.fromEntries([
 	"set_api_key_or",
 	"set_api_key_oai",
 	"set_api_key_g",
-	"set_api_key_claude",
+	"set_api_key_ant",
 	"set_api_key_cf",
 	"set_api_key_custom1",
 	"set_title_model",
@@ -331,7 +331,7 @@ var buildBody = () => {
 		role: "system",
 		content: mPrompt
 	});
-	const modelName = SUNE.model.replace(/^(or:|oai:|g:|cla:)/, "").replace(/^[^/]*\//, "").replace(/(?::online|:free)+$/, "");
+	const modelName = SUNE.model.replace(/^(or:|oai:|g:|ant:)/, "").replace(/^[^/]*\//, "").replace(/(?::online|:free)+$/, "");
 	const sPrompt = (SUNE.system_prompt || "").trim().replaceAll("{{model_name}}", () => modelName);
 	if (sPrompt) msgs.push({
 		role: "system",
@@ -354,7 +354,7 @@ var buildBody = () => {
 		if (last.role === "assistant" && last.content.length === 0 && (!last.images || last.images.length === 0)) msgs.pop();
 	}
 	const b = payloadWithSampling({
-		model: SUNE.model.replace(/^(or:|oai:|g:|cla:)/, ""),
+		model: SUNE.model.replace(/^(or:|oai:|g:|ant:)/, ""),
 		messages: msgs,
 		stream: true
 	});
@@ -548,8 +548,8 @@ function track(msg, tid, key) {
 }
 function startReply(msg) {
 	const { USER, SUNE, state } = window;
-	const model = SUNE.model, provider = model.startsWith("oai:") ? "openai" : model.startsWith("g:") ? "google" : model.startsWith("cla:") ? "claude" : model.startsWith("or:") ? "openrouter" : USER.provider;
-	const apiKey = provider === "openai" ? USER.apiKeyOpenAI : provider === "google" ? USER.apiKeyGoogle : provider === "claude" ? USER.apiKeyClaude : USER.apiKeyOpenRouter;
+	const model = SUNE.model, provider = model.startsWith("oai:") ? "openai" : model.startsWith("g:") ? "google" : model.startsWith("ant:") ? "anthropic" : model.startsWith("or:") ? "openrouter" : USER.provider;
+	const apiKey = provider === "openai" ? USER.apiKeyOpenAI : provider === "google" ? USER.apiKeyGoogle : provider === "anthropic" ? USER.apiKeyAnthropic : USER.apiKeyOpenRouter;
 	const s = track(msg, state.currentThreadId, threadKey(state.currentThreadId));
 	if (!apiKey) {
 		msg.content[0].text = window.localDemoReply();
@@ -663,7 +663,7 @@ var USER = {
 		localStorage.setItem("provider", [
 			"openai",
 			"google",
-			"claude"
+			"anthropic"
 		].includes(v) ? v : "openrouter");
 	},
 	get apiKeyOpenRouter() {
@@ -684,11 +684,11 @@ var USER = {
 	set apiKeyGoogle(v) {
 		localStorage.setItem("google_api_key", v || "");
 	},
-	get apiKeyClaude() {
-		return localStorage.getItem("claude_api_key") || "";
+	get apiKeyAnthropic() {
+		return localStorage.getItem("anthropic_api_key") || "";
 	},
-	set apiKeyClaude(v) {
-		localStorage.setItem("claude_api_key", v || "");
+	set apiKeyAnthropic(v) {
+		localStorage.setItem("anthropic_api_key", v || "");
 	},
 	get apiKeyCloudflare() {
 		return localStorage.getItem("cloudflare_api_key") || "";
@@ -698,13 +698,13 @@ var USER = {
 	},
 	get apiKey() {
 		const p = this.provider;
-		return p === "openai" ? this.apiKeyOpenAI : p === "google" ? this.apiKeyGoogle : p === "claude" ? this.apiKeyClaude : this.apiKeyOpenRouter;
+		return p === "openai" ? this.apiKeyOpenAI : p === "google" ? this.apiKeyGoogle : p === "anthropic" ? this.apiKeyAnthropic : this.apiKeyOpenRouter;
 	},
 	set apiKey(v) {
 		const p = this.provider;
 		if (p === "openai") this.apiKeyOpenAI = v;
 		else if (p === "google") this.apiKeyGoogle = v;
-		else if (p === "claude") this.apiKeyClaude = v;
+		else if (p === "anthropic") this.apiKeyAnthropic = v;
 		else this.apiKeyOpenRouter = v;
 	},
 	get masterPrompt() {
@@ -896,7 +896,7 @@ var loadMb = async () => {
 		sampleRate: 48e3,
 		bitrate: AUDIO_BPS
 	})) (await __vitePreload(async () => {
-		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-CvIaGQWe.js");
+		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-laB6T72z.js");
 		return { registerAacEncoder };
 	}, __vite__mapDeps([0,1]))).registerAacEncoder();
 	return mb = m;
@@ -1202,7 +1202,7 @@ var SYSTEM_KEYS = new Set([
 	"openrouter_api_key",
 	"openai_api_key",
 	"google_api_key",
-	"claude_api_key",
+	"anthropic_api_key",
 	"cloudflare_api_key",
 	"master_prompt",
 	"title_model",
@@ -2750,7 +2750,7 @@ function openAccountSettings() {
 	el.set_api_key_or.value = USER.apiKeyOpenRouter || "";
 	el.set_api_key_oai.value = USER.apiKeyOpenAI || "";
 	el.set_api_key_g.value = USER.apiKeyGoogle || "";
-	el.set_api_key_claude.value = USER.apiKeyClaude || "";
+	el.set_api_key_ant.value = USER.apiKeyAnthropic || "";
 	el.set_api_key_cf.value = USER.apiKeyCloudflare || "";
 	el.set_api_key_custom1.value = USER.customKey1 || "";
 	el.set_api_key_custom1.value = USER.customKey1 || "";
@@ -2793,7 +2793,7 @@ $(el.accountSettingsForm).on("submit", (e) => {
 	USER.apiKeyOpenRouter = String(el.set_api_key_or.value || "").trim();
 	USER.apiKeyOpenAI = String(el.set_api_key_oai.value || "").trim();
 	USER.apiKeyGoogle = String(el.set_api_key_g.value || "").trim();
-	USER.apiKeyClaude = String(el.set_api_key_claude.value || "").trim();
+	USER.apiKeyAnthropic = String(el.set_api_key_ant.value || "").trim();
 	USER.apiKeyCloudflare = String(el.set_api_key_cf.value || "").trim();
 	USER.customKey1 = String(el.set_api_key_custom1.value || "").trim();
 	USER.masterPrompt = String(el.set_master_prompt.value || "").trim();
@@ -2808,10 +2808,8 @@ $(el.accountPanelAPI).on("click", (e) => {
 	if (!b) return;
 	const i = document.getElementById(b.dataset.revealFor);
 	if (!i) return;
-	const p = i.type === "password";
-	i.type = p ? "text" : "password";
-	b.querySelector("i").setAttribute("data-lucide", p ? "eye-off" : "eye");
-	lucide.createIcons();
+	b.innerHTML = `<i data-lucide="${i.classList.toggle("key-mask") ? "eye" : "eye-off"}" class="h-4 w-4"></i>`;
+	icons();
 });
 el.accountTabGeneral.onclick = () => showAccountTab("General");
 el.accountTabAPI.onclick = () => showAccountTab("API");
@@ -2822,7 +2820,7 @@ el.exportAccountSettings.onclick = () => dl(`sune-account-${ts()}.json`, {
 	apiKeyOpenRouter: USER.apiKeyOpenRouter,
 	apiKeyOpenAI: USER.apiKeyOpenAI,
 	apiKeyGoogle: USER.apiKeyGoogle,
-	apiKeyClaude: USER.apiKeyClaude,
+	apiKeyAnthropic: USER.apiKeyAnthropic,
 	apiKeyCloudflare: USER.apiKeyCloudflare,
 	customKey1: USER.customKey1,
 	masterPrompt: USER.masterPrompt,
@@ -2846,7 +2844,7 @@ el.importAccountSettingsInput.onchange = async (e) => {
 			apiKeyOpenRouter: "apiKeyOR",
 			apiKeyOpenAI: "apiKeyOAI",
 			apiKeyGoogle: "apiKeyG",
-			apiKeyClaude: "apiKeyClaude",
+			apiKeyAnthropic: "apiKeyAnthropic",
 			apiKeyCloudflare: "apiKeyCloudflare",
 			customKey1: "customKey1",
 			masterPrompt: "masterPrompt",
