@@ -63,3 +63,5 @@ Never lose a conversation again. Sune can sync all your threads to a GitHub repo
    - **Download from GitHub** = Pull threads down from GitHub
 
 That's it. Your threads are now backed up as JSON files in your repo. You can sync across devices, never lose a chat, and even browse your conversations directly on GitHub.
+
+[![sune-org/sune star history](https://starry.direct-img.link/sune-org/sune.svg)](https://starry.direct-img.link)
