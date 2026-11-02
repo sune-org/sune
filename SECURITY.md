@@ -4,7 +4,7 @@ Sune is client-side. Your threads, sunes, settings, API keys, and GitHub PAT liv
 
 ## The Proxy
 
-Streaming is relayed through [`us.proxy.sune.chat`](https://github.com/sune-org/us.proxy.sune.chat) so mobile generations survive screen locks. Your browser opens a WebSocket, the proxy forwards to the provider with the API key **you** supplied, and streams tokens back.
+Streaming is relayed through [`us.proxy.sune.planetrenox.com`](https://github.com/sune-org/us.proxy.sune.chat) so mobile generations survive screen locks. Your browser opens a WebSocket, the proxy forwards to the provider with the API key **you** supplied, and streams tokens back.
 
 **What it doesn't do:** no prompt logging (your messages are held in memory only while the run is in progress; the generated reply stays in memory for 90 minutes after it ends so you can reconnect, and nothing is written to disk), no reading your chats, no storing keys, no third-party sharing.
 

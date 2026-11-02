@@ -4,7 +4,7 @@ import { renderMarkdown, enhanceCodeBlocks } from './markdown.js';
 import { SUNE_LOGO_SVG } from './sune-logo.js';
 
 // The proxy's maxPayloadLength; it drops anything bigger with no useful close code
-const WS_URL='wss://us.proxy.sune.chat/ws',MAX_REQ=100*1024*1024,LIVE_KEY='threads_live';
+const WS_URL='wss://us.proxy.sune.planetrenox.com/ws',MAX_REQ=100*1024*1024,LIVE_KEY='threads_live';
 
 export const buildBody=()=>{
   const {USER,SUNE,state,payloadWithSampling}=window;
