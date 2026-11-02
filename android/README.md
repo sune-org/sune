@@ -14,7 +14,7 @@ Both are listed for both domains in [`public/.well-known/assetlinks.json`](../pu
 
 Actions → **Release APK** → Run workflow on `master` → enter the tag, e.g. `v1.0.0`.
 
-Bubblewrap is pinned to cli and core 1.25.0 (androidbrowserhelper 2.6.2). Core 1.27.0 ships androidbrowserhelper 2.7.4, which enables `ManageDataLauncherActivity` on every launch; with `enableSiteSettingsShortcut: false` that activity isn't declared, so the app crashes on open (this is what broke v1.1.0). Before bumping, set `enableSiteSettingsShortcut` to `true` and test the APK on a device.
+Bubblewrap is pinned to cli and core 1.25.0 (androidbrowserhelper 2.6.2). Core 1.27.0 ships androidbrowserhelper 2.7.4, which enables `ManageDataLauncherActivity` on every launch; with `enableSiteSettingsShortcut: false` that activity isn't declared, so the app crashes on open. Before bumping, set `enableSiteSettingsShortcut` to `true` and test the APK on a device.
 
 It builds `sune-v1.0.0.apk`, signs it, checks the signing cert against `assetlinks.json`, attests build provenance, then creates the tag and release. `versionCode` is `major*10000 + minor*100 + patch`. Run it from any other branch to do a dry run: it builds and verifies but publishes nothing.
 
