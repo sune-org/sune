@@ -1,4 +1,4 @@
-[![Download For Android (.apk)](https://img.shields.io/badge/Download-For%20Android%20(.apk)-green?style=for-the-badge&logo=android)](https://github.com/sune-org/sune/releases/download/v1.1.0/sune-v1.1.0.apk)
+[![Download For Android (.apk)](https://img.shields.io/badge/Download-For%20Android%20(.apk)-green?style=for-the-badge&logo=android)](https://github.com/sune-org/sune/releases/download/v1.1.1/sune-v1.1.1.apk)
 
 <p align="center">
   <img src="./public/appstore_content/screenshot1.jpg" alt="Main" width="280" />
