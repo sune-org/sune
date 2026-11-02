@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-nnOl37BH.js","assets/src-DlKePj_l.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-B8-MhNdk.js","assets/src-DlKePj_l.js"])))=>i.map(i=>d[i]);
 import mathjax3 from "https://esm.sh/markdown-it-mathjax3@5.2.0";
 //#region \0vite/modulepreload-polyfill.js
 (function polyfill() {
@@ -322,7 +322,7 @@ var SUNE_LOGO_SVG = `
 `;
 //#endregion
 //#region src/streaming.js
-var WS_URL = "wss://us.proxy.sune.chat/ws", MAX_REQ = 100 * 1024 * 1024, LIVE_KEY = "threads_live";
+var WS_URL = "wss://us.proxy.sune.planetrenox.com/ws", MAX_REQ = 100 * 1024 * 1024, LIVE_KEY = "threads_live";
 var buildBody = () => {
 	const { USER, SUNE, state, payloadWithSampling } = window;
 	const msgs = [];
@@ -896,7 +896,7 @@ var loadMb = async () => {
 		sampleRate: 48e3,
 		bitrate: AUDIO_BPS
 	})) (await __vitePreload(async () => {
-		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-nnOl37BH.js");
+		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-B8-MhNdk.js");
 		return { registerAacEncoder };
 	}, __vite__mapDeps([0,1]))).registerAacEncoder();
 	return mb = m;
