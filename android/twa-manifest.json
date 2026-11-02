@@ -21,7 +21,7 @@
   "enableSiteSettingsShortcut": false,
   "splashScreenFadeOutDuration": 300,
   "fallbackType": "customtabs",
-  "minSdkVersion": 24,
+  "minSdkVersion": 21,
   "appVersion": "1.1.0",
   "appVersionCode": 10100,
   "signingKey": { "path": "./sune.jks", "alias": "sune" },

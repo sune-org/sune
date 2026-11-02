@@ -65,7 +65,12 @@ jobs:
           "$SM" --sdk_root="$SDK" "build-tools;36.1.0" "platforms;android-36" >/dev/null
           echo "ANDROID_HOME=$SDK" >> $GITHUB_ENV # the runner's own ANDROID_SDK_ROOT would conflict
           echo "ANDROID_SDK_ROOT=$SDK" >> $GITHUB_ENV
-          npm install --global --ignore-scripts @bubblewrap/cli@1.25.0
+          # The cli only asks for core ^1.25.0, and core 1.27.0 (androidbrowserhelper 2.7.4) crashes on launch. See android/README.md
+          BW=$RUNNER_TEMP/bubblewrap && mkdir -p "$BW" && cd "$BW"
+          echo '{"private":true,"overrides":{"@bubblewrap/core":"1.25.0"}}' > package.json
+          npm install --ignore-scripts @bubblewrap/cli@1.25.0
+          ! npm ls --all @bubblewrap/core | grep '@bubblewrap/core@' | grep -v '@bubblewrap/core@1.25.0' || { echo "::error::@bubblewrap/core is not pinned to 1.25.0"; exit 1; }
+          echo "$BW/node_modules/.bin" >> $GITHUB_PATH
           mkdir -p ~/.bubblewrap
           jq -n --arg jdk "$JAVA_HOME" --arg sdk "$SDK" '{jdkPath:$jdk,androidSdkPath:$sdk}' > ~/.bubblewrap/config.json
 
@@ -86,6 +91,7 @@ jobs:
             android/twa-manifest.json > "$B/twa-manifest.json"
           cd "$B"
           bubblewrap update --manifest ./twa-manifest.json --skipVersionUpgrade
+          grep -q "androidbrowserhelper:2.6.2'" app/build.gradle || { echo "::error::expected androidbrowserhelper 2.6.2"; grep androidbrowserhelper app/build.gradle; exit 1; }
           bubblewrap build --manifest ./twa-manifest.json --skipPwaValidation
           mv app-release-signed.apk "$OUT/$APK"
           rm -f sune.jks
