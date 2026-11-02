@@ -1,11 +1,11 @@
 # Android app
 
-Sune for Android is a [Trusted Web Activity](https://developer.chrome.com/docs/android/trusted-web-activity) wrapper around https://sune.chat, built with [Bubblewrap](https://github.com/GoogleChromeLabs/bubblewrap). It contains no app code, only the config in `twa-manifest.json`.
+Sune for Android is a [Trusted Web Activity](https://developer.chrome.com/docs/android/trusted-web-activity) wrapper around https://sune.planetrenox.com, built with [Bubblewrap](https://github.com/GoogleChromeLabs/bubblewrap). It contains no app code, only the config in `twa-manifest.json`.
 
 | | New app | Legacy app (v0.x) |
 |---|---|---|
 | Package | `chat.sune.app` | `com.planetrenox.sune` |
-| Host | `sune.chat` (also trusts `sune.planetrenox.com`) | `sune.planetrenox.com` |
+| Host | `sune.planetrenox.com` (v1.0.0 used `sune.chat`) | `sune.planetrenox.com` |
 | Signing cert SHA-256 | `09:85:1F:7B:BB:40:67:9C:F8:70:1C:7D:9F:65:72:77:78:0E:C0:58:CF:34:09:9A:97:D2:8A:74:FB:CE:87:2A` | `E8:7D:70:60:C2:7D:EF:CB:4D:4D:2B:E2:2E:5E:37:ED:F7:0B:1E:F5:77:D7:04:1F:6B:07:EC:B8:1D:78:6D:43` (**leaked**) |
 
 Both are listed for both domains in [`public/.well-known/assetlinks.json`](../public/.well-known/assetlinks.json); that file is what makes Chrome hide the address bar. Remove the legacy entry once nobody uses the old app (a leaked key can sign a fake `com.planetrenox.sune` that Chrome would trust).
@@ -22,7 +22,7 @@ It builds `sune-v1.0.0.apk`, signs it, checks the signing cert against `assetlin
 gh attestation verify sune-v1.0.0.apk --repo sune-org/sune
 ```
 
-This proves the file was built by this repo's workflow at the commit named in the release, and not modified since. The APK is only a wrapper; the app itself is served live from sune.chat and is not covered by it.
+This proves the file was built by this repo's workflow at the commit named in the release, and not modified since. The APK is only a wrapper; the app itself is served live from sune.planetrenox.com and is not covered by it.
 
 ## Signing key
 
