@@ -1,6 +1,6 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/__vite-browser-external-CDvtoS5G.js","assets/src-scQar_nB.js"])))=>i.map(i=>d[i]);
 import { CustomAudioEncoder, EncodedPacket, Logging, n as __require$1, r as __toESM, registerEncoder } from "./src-scQar_nB.js";
-import { t as __vitePreload } from "./index-CL-R90l-.js";
+import { t as __vitePreload } from "./index-1k3Xc34t.js";
 // node_modules/@mediabunny/aac-encoder/dist/bundles/mediabunny-aac-encoder.mjs
 /*!
 * Copyright (c) 2026-present, Vanilagy and contributors

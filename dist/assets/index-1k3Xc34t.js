@@ -1,5 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-BUmUjIDd.js","assets/src-scQar_nB.js"])))=>i.map(i=>d[i]);
-import mathjax3 from "https://esm.sh/markdown-it-mathjax3@5.2.0";
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-mgbeXjDA.js","assets/src-scQar_nB.js"])))=>i.map(i=>d[i]);
 // \0vite/modulepreload-polyfill.js
 (function polyfill() {
 	const relList = document.createElement("link").relList;
@@ -259,14 +258,117 @@ var ts = () => {
 	const d = /* @__PURE__ */ new Date(), p = (n) => String(n).padStart(2, "0");
 	return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
 };
+// \0vite/preload-helper.js
+var scriptRel = "modulepreload";
+var assetsURL = function(dep) {
+	return "/" + dep;
+};
+var seen = {};
+var isCssPreloadUrl = function isCssPreloadUrl(url) {
+	return url.pathname.endsWith(".css");
+};
+var preloadOnce = function preloadOnce(seen, href, preload) {
+	if (href in seen) return seen[href];
+	const promise = preload();
+	if (!promise) {
+		seen[href] = void 0;
+		return;
+	}
+	const preloadPromise = promise.then(() => {
+		seen[href] = void 0;
+	}, (err) => {
+		seen[href] = void 0;
+		throw err;
+	});
+	seen[href] = preloadPromise;
+	return preloadPromise;
+};
+var __vitePreload = function preload(baseModule, deps, importerUrl) {
+	let promise = Promise.resolve();
+	if (deps && deps.length > 0) {
+		let preloadedHrefs;
+		const cspNonceMeta = document.querySelector("meta[property=csp-nonce]");
+		const cspNonce = cspNonceMeta?.nonce || cspNonceMeta?.getAttribute("nonce");
+		function allSettled(promises) {
+			return Promise.all(promises.map((p) => Promise.resolve(p).then((value) => ({
+				status: "fulfilled",
+				value
+			}), (reason) => ({
+				status: "rejected",
+				reason
+			}))));
+		}
+		function importMetaResolve(specifier) {
+			if (import.meta.resolve) return new URL(import.meta.resolve(specifier));
+			return new URL(
+				specifier,
+				/** #__KEEP__ */
+				import.meta.url
+			);
+		}
+		promise = allSettled(deps.map((depString) => {
+			depString = assetsURL(depString, importerUrl);
+			const dep = importMetaResolve(depString);
+			const isCss = isCssPreloadUrl(dep);
+			return preloadOnce(seen, dep.href, () => {
+				if (preloadedHrefs === void 0) {
+					preloadedHrefs = {
+						all: /* @__PURE__ */ new Set(),
+						styles: /* @__PURE__ */ new Set()
+					};
+					const links = document.getElementsByTagName("link");
+					for (let i = links.length - 1; i >= 0; i--) {
+						const link = links[i];
+						preloadedHrefs.all.add(link.href);
+						if (link.rel === "stylesheet") preloadedHrefs.styles.add(link.href);
+					}
+				}
+				if ((isCss ? preloadedHrefs.styles : preloadedHrefs.all).has(dep.href)) return;
+				const link = document.createElement("link");
+				link.rel = isCss ? "stylesheet" : scriptRel;
+				if (!isCss) link.as = "script";
+				link.crossOrigin = "";
+				link.href = dep.href;
+				if (cspNonce) link.setAttribute("nonce", cspNonce);
+				document.head.appendChild(link);
+				if (isCss) return new Promise((res, rej) => {
+					const handleSettle = (e) => {
+						link.removeEventListener("load", handleSettle);
+						link.removeEventListener("error", handleSettle);
+						if (e.type === "error") rej(/* @__PURE__ */ new Error(`Unable to preload CSS for ${dep}`));
+						else res(e);
+					};
+					link.addEventListener("load", handleSettle);
+					link.addEventListener("error", handleSettle);
+				});
+			});
+		}).filter((p) => p !== void 0));
+	}
+	function handlePreloadError(err) {
+		const e = new Event("vite:preloadError", { cancelable: true });
+		e.payload = err;
+		window.dispatchEvent(e);
+		if (!e.defaultPrevented) throw err;
+	}
+	return promise.then((res) => {
+		for (const item of res || []) {
+			if (item.status !== "rejected") continue;
+			handlePreloadError(item.reason);
+		}
+		return baseModule().catch(handlePreloadError);
+	});
+};
 // src/markdown.js
 var md = window.md = window.markdownit({
 	html: false,
 	linkify: true,
 	typographer: true,
 	breaks: true
-}).use(mathjax3);
+});
 md.linkify.set({ fuzzyLink: true });
+var math;
+var mathOn;
+var loadMath = () => math ||= __vitePreload(() => import("https://esm.sh/markdown-it-mathjax3@5.2.0").then((m) => (md.use(m.default), mathOn = 1), () => math = null), []);
 function enhanceCodeBlocks(root, doHL = true) {
 	window.$(root).find("pre>code").each((i, code) => {
 		if (code.textContent.length > 2e5) return;
@@ -293,6 +395,14 @@ var renderMarkdown = window.renderMarkdown = function(node, text, opt = {
 }) {
 	node.innerHTML = md.render(text);
 	if (opt.enhance) enhanceCodeBlocks(node, opt.highlight);
+	if (mathOn || !text.includes("$")) return;
+	const waiting = node._md;
+	node._md = [text, opt];
+	if (!waiting) loadMath().then(() => {
+		const a = node._md;
+		delete node._md;
+		mathOn && node.isConnected && renderMarkdown(node, ...a);
+	});
 };
 // src/sune-logo.js
 var SUNE_LOGO_SVG = `
@@ -387,8 +497,10 @@ function paint(s, final) {
 	if (!b) return;
 	const t = partsToText(s.msg);
 	if (!t && !final) return b.innerHTML = SUNE_LOGO_SVG;
-	renderMarkdown(b, t, { enhance: false });
-	if (final) enhanceCodeBlocks(b, true);
+	renderMarkdown(b, t, {
+		enhance: !!final,
+		highlight: true
+	});
 }
 async function write(s) {
 	const { THREAD } = window;
@@ -812,106 +924,6 @@ function kbBind() {
 		}, 0);
 	});
 }
-// \0vite/preload-helper.js
-var scriptRel = "modulepreload";
-var assetsURL = function(dep) {
-	return "/" + dep;
-};
-var seen = {};
-var isCssPreloadUrl = function isCssPreloadUrl(url) {
-	return url.pathname.endsWith(".css");
-};
-var preloadOnce = function preloadOnce(seen, href, preload) {
-	if (href in seen) return seen[href];
-	const promise = preload();
-	if (!promise) {
-		seen[href] = void 0;
-		return;
-	}
-	const preloadPromise = promise.then(() => {
-		seen[href] = void 0;
-	}, (err) => {
-		seen[href] = void 0;
-		throw err;
-	});
-	seen[href] = preloadPromise;
-	return preloadPromise;
-};
-var __vitePreload = function preload(baseModule, deps, importerUrl) {
-	let promise = Promise.resolve();
-	if (deps && deps.length > 0) {
-		let preloadedHrefs;
-		const cspNonceMeta = document.querySelector("meta[property=csp-nonce]");
-		const cspNonce = cspNonceMeta?.nonce || cspNonceMeta?.getAttribute("nonce");
-		function allSettled(promises) {
-			return Promise.all(promises.map((p) => Promise.resolve(p).then((value) => ({
-				status: "fulfilled",
-				value
-			}), (reason) => ({
-				status: "rejected",
-				reason
-			}))));
-		}
-		function importMetaResolve(specifier) {
-			if (import.meta.resolve) return new URL(import.meta.resolve(specifier));
-			return new URL(
-				specifier,
-				/** #__KEEP__ */
-				import.meta.url
-			);
-		}
-		promise = allSettled(deps.map((depString) => {
-			depString = assetsURL(depString, importerUrl);
-			const dep = importMetaResolve(depString);
-			const isCss = isCssPreloadUrl(dep);
-			return preloadOnce(seen, dep.href, () => {
-				if (preloadedHrefs === void 0) {
-					preloadedHrefs = {
-						all: /* @__PURE__ */ new Set(),
-						styles: /* @__PURE__ */ new Set()
-					};
-					const links = document.getElementsByTagName("link");
-					for (let i = links.length - 1; i >= 0; i--) {
-						const link = links[i];
-						preloadedHrefs.all.add(link.href);
-						if (link.rel === "stylesheet") preloadedHrefs.styles.add(link.href);
-					}
-				}
-				if ((isCss ? preloadedHrefs.styles : preloadedHrefs.all).has(dep.href)) return;
-				const link = document.createElement("link");
-				link.rel = isCss ? "stylesheet" : scriptRel;
-				if (!isCss) link.as = "script";
-				link.crossOrigin = "";
-				link.href = dep.href;
-				if (cspNonce) link.setAttribute("nonce", cspNonce);
-				document.head.appendChild(link);
-				if (isCss) return new Promise((res, rej) => {
-					const handleSettle = (e) => {
-						link.removeEventListener("load", handleSettle);
-						link.removeEventListener("error", handleSettle);
-						if (e.type === "error") rej(/* @__PURE__ */ new Error(`Unable to preload CSS for ${dep}`));
-						else res(e);
-					};
-					link.addEventListener("load", handleSettle);
-					link.addEventListener("error", handleSettle);
-				});
-			});
-		}).filter((p) => p !== void 0));
-	}
-	function handlePreloadError(err) {
-		const e = new Event("vite:preloadError", { cancelable: true });
-		e.payload = err;
-		window.dispatchEvent(e);
-		if (!e.defaultPrevented) throw err;
-	}
-	return promise.then((res) => {
-		for (const item of res || []) {
-			if (item.status !== "rejected") continue;
-			handlePreloadError(item.reason);
-		}
-		return baseModule().catch(handlePreloadError);
-	});
-};
 // src/video.js
 var SHORT_SIDE = 360;
 var FPS = 4;
@@ -930,7 +942,7 @@ var loadMb = async () => {
 		sampleRate: 48e3,
 		bitrate: AUDIO_BPS
 	})) (await __vitePreload(async () => {
-		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-BUmUjIDd.js");
+		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-mgbeXjDA.js");
 		return { registerAacEncoder };
 	}, __vite__mapDeps([0,1]))).registerAacEncoder();
 	return mb = m;
@@ -1163,16 +1175,11 @@ var processSuneIncludes = async (html, depth = 0) => {
 	if (depth > 5) return "<!-- Sune include depth limit reached -->";
 	if (!html) return "";
 	const c = (Document.parseHTMLUnsafe ? Document.parseHTMLUnsafe(html) : new DOMParser().parseFromString(html, "text/html")).body;
-	for (const n of [...c.querySelectorAll("sune")]) if (n.hasAttribute("src")) {
-		if (n.hasAttribute("private") && depth > 0) {
-			n.remove();
-			continue;
-		}
+	await Promise.all([...c.querySelectorAll("sune")].map(async (n) => {
+		if (!n.hasAttribute("src")) return n.replaceWith(...Array.from(n.childNodes));
+		if (n.hasAttribute("private") && depth > 0) return n.remove();
 		const s = n.getAttribute("src"), u = resolveSuneSrc(s);
-		if (!u) {
-			n.replaceWith(document.createComment(` Invalid src: ${esc(s)} `));
-			continue;
-		}
+		if (!u) return n.replaceWith(document.createComment(` Invalid src: ${esc(s)} `));
 		try {
 			const r = await fetch(u);
 			if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -1183,28 +1190,40 @@ var processSuneIncludes = async (html, depth = 0) => {
 		} catch (e) {
 			n.replaceWith(document.createComment(` Fetch failed: ${esc(u)} `));
 		}
-	} else n.replaceWith(...Array.from(n.childNodes));
+	}));
 	return c.innerHTML;
 };
+var gen = 0;
+var ac;
+var suneSignal = () => ac?.signal;
+var isJs = (s) => !s.type || /^(text|application)\/(java|ecma)script$/i.test(s.type);
 var renderSuneHTML = async () => {
-	const SUNE = window.SUNE;
+	const SUNE = window.SUNE, g = ++gen;
 	const h = await processSuneIncludes([SUNE.extension_html, SUNE.html].map((x) => (x || "").trim()).join("\n"));
+	if (g !== gen) return;
 	const c = el.suneHtml;
+	for (const n of [c, ...c.querySelectorAll("*")]) n.dispatchEvent(new CustomEvent("sune:unmount"));
+	ac?.abort();
+	ac = new AbortController();
 	c.innerHTML = "";
 	const t = h.trim();
 	c.classList.toggle("hidden", !t);
-	if (t) {
-		const doc = Document.parseHTMLUnsafe ? Document.parseHTMLUnsafe(h) : new DOMParser().parseFromString(h, "text/html");
-		c.append(...Array.from(doc.body.childNodes));
-		c.querySelectorAll("script").forEach((oldScript) => {
-			const newScript = document.createElement("script");
-			Array.from(oldScript.attributes).forEach((attr) => newScript.setAttribute(attr.name, attr.value));
-			newScript.textContent = oldScript.textContent;
-			if (!newScript.hasAttribute("async")) newScript.async = false;
-			oldScript.replaceWith(newScript);
-		});
-		window.Alpine?.initTree(c);
+	if (!t) return;
+	const doc = Document.parseHTMLUnsafe ? Document.parseHTMLUnsafe(h) : new DOMParser().parseFromString(h, "text/html");
+	c.append(...Array.from(doc.body.childNodes));
+	for (const old of c.querySelectorAll("script")) {
+		const s = document.createElement("script");
+		Array.from(old.attributes).forEach((attr) => s.setAttribute(attr.name, attr.value));
+		s.textContent = s.src || !isJs(s) ? old.textContent : `(0,eval)(${JSON.stringify(old.textContent)})`;
+		const wait = s.src && isJs(s) && !s.noModule && !old.hasAttribute("async") && new Promise((r) => s.onload = s.onerror = r);
+		if (!old.hasAttribute("async")) s.async = false;
+		old.replaceWith(s);
+		if (wait) {
+			await wait;
+			if (g !== gen) return;
+		}
 	}
+	window.Alpine?.initTree(c);
 };
 // src/main.js
 (() => {
@@ -1389,6 +1408,9 @@ var makeSune = (p = {}) => ({
 var sunes = (su.load() || []).map(makeSune);
 var SUNE = window.SUNE = new Proxy({
 	storage: suneStorage,
+	get signal() {
+		return suneSignal();
+	},
 	get list() {
 		return sunes;
 	},
@@ -1527,12 +1549,12 @@ var getModelShort = (m) => {
 	const mm = m || SUNE.model || "";
 	return mm.includes("/") ? mm.split("/").pop() : mm;
 };
-var reflectActiveSune = async () => {
+var reflectActiveSune = async (html = true) => {
 	const a = SUNE.active;
 	el.suneBtnTop.title = `Settings — ${a.name}`;
 	el.suneBtnTop.innerHTML = a.avatar ? `<img src="${esc(a.avatar)}" alt="" class="h-10 w-10 rounded-full object-cover"/>` : "✺";
 	el.footer.classList.toggle("hidden", !!a.settings.hide_composer);
-	await renderSuneHTML();
+	if (html) await renderSuneHTML();
 	icons();
 };
 var suneRow = (a) => `<div class="relative flex items-center gap-2 px-3 py-2 ${a.pinned ? "bg-yellow-50" : ""}"><button data-sune-id="${a.id}" class="flex-1 text-left flex items-center gap-2 ${a.id === SUNE.id ? "font-medium" : ""}">${a.avatar ? `<img src="${esc(a.avatar)}" alt="" class="h-8 w-8 rounded-full object-cover"/>` : `<span class="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center">✺</span>`}<span class="truncate">${a.pinned ? "📌 " : ""}${esc(a.name)}</span></button><button data-sune-menu="${a.id}" class="h-8 w-8 rounded hover:bg-gray-100 flex items-center justify-center" title="More"><i data-lucide="more-horizontal" class="h-4 w-4"></i></button></div>`;
@@ -1616,7 +1638,6 @@ var addSuneBubbleStreaming = (meta, id) => msgRow(Object.assign({
 	id
 }, meta));
 var clearChat = () => {
-	el.suneHtml.dispatchEvent(new CustomEvent("sune:unmount"));
 	state.messages = [];
 	el.messages.innerHTML = "";
 	clearAttachments();
@@ -1974,7 +1995,7 @@ $(el.sunePopover).on("click", async (e) => {
 		s.updatedAt = Date.now();
 		SUNE.save();
 		renderSidebar();
-		await reflectActiveSune();
+		await reflectActiveSune(false);
 		markLocalDirty();
 	};
 	if (act === "pin") {
