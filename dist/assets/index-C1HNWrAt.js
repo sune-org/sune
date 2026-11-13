@@ -1,6 +1,6 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-CLGTY6Js.js","assets/src-DlKePj_l.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-CqwhiE8u.js","assets/src-scQar_nB.js"])))=>i.map(i=>d[i]);
 import mathjax3 from "https://esm.sh/markdown-it-mathjax3@5.2.0";
-//#region \0vite/modulepreload-polyfill.js
+// \0vite/modulepreload-polyfill.js
 (function polyfill() {
 	const relList = document.createElement("link").relList;
 	if (relList && relList.supports && relList.supports("modulepreload")) return;
@@ -30,8 +30,7 @@ import mathjax3 from "https://esm.sh/markdown-it-mathjax3@5.2.0";
 		fetch(link.href, fetchOpts);
 	}
 })();
-//#endregion
-//#region src/dom.js
+// src/dom.js
 var el = window.el = Object.fromEntries([
 	"topbar",
 	"chat",
@@ -145,8 +144,7 @@ var el = window.el = Object.fromEntries([
 	"threadsSyncUploadBtn",
 	"threadsSyncDownloadBtn"
 ].map((id) => [id, document.getElementById(id)]));
-//#endregion
-//#region src/utils.js
+// src/utils.js
 var clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 var num = (v, d) => v == null || v === "" || isNaN(+v) ? d : +v;
 var int = (v, d) => v == null || v === "" || isNaN(parseInt(v)) ? d : parseInt(v);
@@ -164,7 +162,7 @@ var positionPopover = (a, p) => {
 	p.style.top = `${r.bottom + p.offsetHeight + 4 > window.innerHeight ? r.top - p.offsetHeight - 4 : r.bottom + 4}px`;
 	p.style.left = `${Math.max(8, Math.min(r.right - p.offsetWidth, window.innerWidth - p.offsetWidth - 8))}px`;
 };
-var sid = () => btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16)))).replace(/[+/=]/g, (c) => ({
+var sid = () => btoa(String.fromCharCode(...crypto.getRandomValues(/* @__PURE__ */ new Uint8Array(16)))).replace(/[+/=]/g, (c) => ({
 	"+": "-",
 	"/": "_"
 })[c] || "");
@@ -261,8 +259,7 @@ var ts = () => {
 	const d = /* @__PURE__ */ new Date(), p = (n) => String(n).padStart(2, "0");
 	return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
 };
-//#endregion
-//#region src/markdown.js
+// src/markdown.js
 var md = window.md = window.markdownit({
 	html: false,
 	linkify: true,
@@ -297,8 +294,7 @@ var renderMarkdown = window.renderMarkdown = function(node, text, opt = {
 	node.innerHTML = md.render(text);
 	if (opt.enhance) enhanceCodeBlocks(node, opt.highlight);
 };
-//#endregion
-//#region src/sune-logo.js
+// src/sune-logo.js
 var SUNE_LOGO_SVG = `
 <div class="flex items-center justify-start py-1 opacity-80">
   <style>
@@ -320,9 +316,10 @@ var SUNE_LOGO_SVG = `
   </svg>
 </div>
 `;
-//#endregion
-//#region src/streaming.js
-var WS_URL = "wss://us.proxy.sune.planetrenox.com/ws", MAX_REQ = 100 * 1024 * 1024, LIVE_KEY = "threads_live";
+// src/streaming.js
+var WS_URL = "wss://us.proxy.sune.planetrenox.com/ws";
+var MAX_REQ = 104857600;
+var LIVE_KEY = "threads_live";
 var buildBody = () => {
 	const { USER, SUNE, state, payloadWithSampling } = window;
 	const msgs = [];
@@ -512,7 +509,7 @@ function connect(s) {
 }
 function retry(s) {
 	s.lostAt ??= Date.now();
-	if (Date.now() - s.lostAt > (s.req ? 3e4 : 105 * 6e4)) return stopReply(s, s.req ? "\n\nCouldn’t reach the server." : "\n\n_Reply interrupted: lost the connection to it._");
+	if (Date.now() - s.lostAt > (s.req ? 3e4 : 63e5)) return stopReply(s, s.req ? "\n\nCouldn’t reach the server." : "\n\n_Reply interrupted: lost the connection to it._");
 	clearTimeout(s.timer);
 	s.timer = setTimeout(() => connect(s), Math.min(15e3, 500 * 2 ** s.tries++));
 }
@@ -595,11 +592,9 @@ var kickAll = () => live.forEach(kick);
 document.addEventListener("visibilitychange", () => document.visibilityState === "visible" && kickAll());
 addEventListener("online", kickAll);
 setInterval(() => document.visibilityState === "visible" && kickAll(), 2e4);
-//#endregion
-//#region src/sticky-sunes.js
+// src/sticky-sunes.js
 var STICKY_SUNES = ["sune-org/store@main/marketplace.sune"];
-//#endregion
-//#region src/title-generator.js
+// src/title-generator.js
 var generateTitleWithAI = async (messages) => {
 	const model = window.USER?.titleModel;
 	const apiKey = window.USER?.apiKeyOpenRouter;
@@ -638,8 +633,7 @@ var generateTitleWithAI = async (messages) => {
 		return null;
 	}
 };
-//#endregion
-//#region src/user.js
+// src/user.js
 var USER = {
 	get PAT() {
 		return this.githubToken;
@@ -732,8 +726,7 @@ var USER = {
 		localStorage.setItem("custom_key_1", v || "");
 	}
 };
-//#endregion
-//#region src/github.js
+// src/github.js
 var ghApi = async (path, method = "GET", body = null) => {
 	const t = USER.githubToken;
 	if (!t) throw new Error("No GH token");
@@ -791,8 +784,7 @@ var ghGetFileContent = async (info, fileName) => {
 	console.warn("[Sune] Could not retrieve content for", fileName);
 	return null;
 };
-//#endregion
-//#region src/keyboard.js
+// src/keyboard.js
 function kbUpdate() {
 	const vv = window.visualViewport;
 	const overlap = vv ? Math.max(0, window.innerHeight - (vv.height + vv.offsetTop)) : 0;
@@ -820,17 +812,35 @@ function kbBind() {
 		}, 0);
 	});
 }
-//#endregion
-//#region \0vite/preload-helper.js
+// \0vite/preload-helper.js
 var scriptRel = "modulepreload";
 var assetsURL = function(dep) {
 	return "/" + dep;
 };
 var seen = {};
+var isCssPreloadUrl = function isCssPreloadUrl(url) {
+	return url.pathname.endsWith(".css");
+};
+var preloadOnce = function preloadOnce(seen, href, preload) {
+	if (href in seen) return seen[href];
+	const promise = preload();
+	if (!promise) {
+		seen[href] = void 0;
+		return;
+	}
+	const preloadPromise = promise.then(() => {
+		seen[href] = void 0;
+	}, (err) => {
+		seen[href] = void 0;
+		throw err;
+	});
+	seen[href] = preloadPromise;
+	return preloadPromise;
+};
 var __vitePreload = function preload(baseModule, deps, importerUrl) {
 	let promise = Promise.resolve();
 	if (deps && deps.length > 0) {
-		const links = document.getElementsByTagName("link");
+		let preloadedHrefs;
 		const cspNonceMeta = document.querySelector("meta[property=csp-nonce]");
 		const cspNonce = cspNonceMeta?.nonce || cspNonceMeta?.getAttribute("nonce");
 		function allSettled(promises) {
@@ -842,29 +852,51 @@ var __vitePreload = function preload(baseModule, deps, importerUrl) {
 				reason
 			}))));
 		}
-		promise = allSettled(deps.map((dep) => {
-			dep = assetsURL(dep, importerUrl);
-			if (dep in seen) return;
-			seen[dep] = true;
-			const isCss = dep.endsWith(".css");
-			const cssSelector = isCss ? "[rel=\"stylesheet\"]" : "";
-			if (!!importerUrl) for (let i = links.length - 1; i >= 0; i--) {
-				const link = links[i];
-				if (link.href === dep && (!isCss || link.rel === "stylesheet")) return;
-			}
-			else if (document.querySelector(`link[href="${dep}"]${cssSelector}`)) return;
-			const link = document.createElement("link");
-			link.rel = isCss ? "stylesheet" : scriptRel;
-			if (!isCss) link.as = "script";
-			link.crossOrigin = "";
-			link.href = dep;
-			if (cspNonce) link.setAttribute("nonce", cspNonce);
-			document.head.appendChild(link);
-			if (isCss) return new Promise((res, rej) => {
-				link.addEventListener("load", res);
-				link.addEventListener("error", () => rej(/* @__PURE__ */ new Error(`Unable to preload CSS for ${dep}`)));
+		function importMetaResolve(specifier) {
+			if (import.meta.resolve) return new URL(import.meta.resolve(specifier));
+			return new URL(
+				specifier,
+				/** #__KEEP__ */
+				import.meta.url
+			);
+		}
+		promise = allSettled(deps.map((depString) => {
+			depString = assetsURL(depString, importerUrl);
+			const dep = importMetaResolve(depString);
+			const isCss = isCssPreloadUrl(dep);
+			return preloadOnce(seen, dep.href, () => {
+				if (preloadedHrefs === void 0) {
+					preloadedHrefs = {
+						all: /* @__PURE__ */ new Set(),
+						styles: /* @__PURE__ */ new Set()
+					};
+					const links = document.getElementsByTagName("link");
+					for (let i = links.length - 1; i >= 0; i--) {
+						const link = links[i];
+						preloadedHrefs.all.add(link.href);
+						if (link.rel === "stylesheet") preloadedHrefs.styles.add(link.href);
+					}
+				}
+				if ((isCss ? preloadedHrefs.styles : preloadedHrefs.all).has(dep.href)) return;
+				const link = document.createElement("link");
+				link.rel = isCss ? "stylesheet" : scriptRel;
+				if (!isCss) link.as = "script";
+				link.crossOrigin = "";
+				link.href = dep.href;
+				if (cspNonce) link.setAttribute("nonce", cspNonce);
+				document.head.appendChild(link);
+				if (isCss) return new Promise((res, rej) => {
+					const handleSettle = (e) => {
+						link.removeEventListener("load", handleSettle);
+						link.removeEventListener("error", handleSettle);
+						if (e.type === "error") rej(/* @__PURE__ */ new Error(`Unable to preload CSS for ${dep}`));
+						else res(e);
+					};
+					link.addEventListener("load", handleSettle);
+					link.addEventListener("error", handleSettle);
+				});
 			});
-		}));
+		}).filter((p) => p !== void 0));
 	}
 	function handlePreloadError(err) {
 		const e = new Event("vite:preloadError", { cancelable: true });
@@ -880,23 +912,25 @@ var __vitePreload = function preload(baseModule, deps, importerUrl) {
 		return baseModule().catch(handlePreloadError);
 	});
 };
-//#endregion
-//#region src/video.js
-var SHORT_SIDE = 360, FPS = 4, VIDEO_BPS = {
+// src/video.js
+var SHORT_SIDE = 360;
+var FPS = 4;
+var VIDEO_BPS = {
 	hevc: 13e4,
 	avc: 16e4
-}, AUDIO_BPS = 32e3;
+};
+var AUDIO_BPS = 32e3;
 var even = (n) => Math.max(2, Math.round(n / 2) * 2);
 var mb;
 var loadMb = async () => {
 	if (mb) return mb;
-	const m = await __vitePreload(() => import("./src-DlKePj_l.js"), []);
+	const m = await __vitePreload(() => import("./src-scQar_nB.js"), []);
 	if (!await m.canEncodeAudio("aac", {
 		numberOfChannels: 1,
 		sampleRate: 48e3,
 		bitrate: AUDIO_BPS
 	})) (await __vitePreload(async () => {
-		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-CLGTY6Js.js");
+		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-CqwhiE8u.js");
 		return { registerAacEncoder };
 	}, __vite__mapDeps([0,1]))).registerAacEncoder();
 	return mb = m;
@@ -1021,8 +1055,7 @@ function videoStrip(parts) {
 	}
 	return wrap;
 }
-//#endregion
-//#region src/attachments.js
+// src/attachments.js
 async function toAttach(file, opts) {
 	if (!file) return null;
 	if (file instanceof File) {
@@ -1094,8 +1127,7 @@ async function toAttach(file, opts) {
 	}
 	return null;
 }
-//#endregion
-//#region src/threads-utils.js
+// src/threads-utils.js
 var titleFrom = (t) => {
 	if (!t) return "Untitled";
 	return (typeof t === "string" ? t : Array.isArray(t) ? partsToText({ content: t }) : "Untitled").replace(/\s+/g, " ").trim().slice(0, 60) || "Untitled";
@@ -1116,8 +1148,7 @@ var deserializeThreadName = (n) => {
 		type: "thread"
 	};
 };
-//#endregion
-//#region src/sune-html.js
+// src/sune-html.js
 var resolveSuneSrc = (src) => {
 	if (!src) return null;
 	if (src.startsWith("gh://")) {
@@ -1175,8 +1206,7 @@ var renderSuneHTML = async () => {
 		window.Alpine?.initTree(c);
 	}
 };
-//#endregion
-//#region src/main.js
+// src/main.js
 (() => {
 	let k, v = visualViewport;
 	const f = () => {
@@ -1190,7 +1220,7 @@ var renderSuneHTML = async () => {
 var DEFAULT_MODEL = "openrouter/free";
 var icons = () => window.lucide && lucide.createIcons();
 var haptic = () => /android/i.test(navigator.userAgent) && navigator.vibrate?.(1);
-var SYSTEM_KEYS = new Set([
+var SYSTEM_KEYS = /* @__PURE__ */ new Set([
 	"sunes_v1",
 	"active_sune_id",
 	"thread_repo_url",
@@ -1236,7 +1266,8 @@ var markLocalDirty = () => {
 	setSuneSyncStatus("desynced");
 };
 var isSuneStorageKey = (k) => !SYSTEM_KEYS.has(k) && /^sune_[^_]+_/.test(k);
-var _origSetItem = localStorage.setItem.bind(localStorage), _origRemoveItem = localStorage.removeItem.bind(localStorage);
+var _origSetItem = localStorage.setItem.bind(localStorage);
+var _origRemoveItem = localStorage.removeItem.bind(localStorage);
 localStorage.setItem = (k, v) => {
 	_origSetItem(k, v);
 	if (!isSyncPulling && isSuneStorageKey(k)) markLocalDirty();
@@ -1490,7 +1521,8 @@ var state = window.state = {
 	abortRequested: false,
 	attachments: []
 };
-var sending = false, btnSwapAt = 0;
+var sending = false;
+var btnSwapAt = 0;
 var getModelShort = (m) => {
 	const mm = m || SUNE.model || "";
 	return mm.includes("/") ? mm.split("/").pop() : mm;
@@ -1634,7 +1666,8 @@ function setBtnSend() {
 function localDemoReply() {
 	return "Tip: open the sidebar → User to set your API key.";
 }
-var TKEY = "threads_v1", THREAD = window.THREAD = {
+var TKEY = "threads_v1";
+var THREAD = window.THREAD = {
 	list: [],
 	load: async function() {
 		const u = el.threadRepoInput.value.trim();
@@ -1709,7 +1742,8 @@ var threadRow = (t) => {
 	const icon = t.type === "folder" ? "folder" : t.type === "file" ? "file-text" : "";
 	return `<div class=\"relative flex items-center gap-2 px-3 py-2 ${t.pinned ? "bg-yellow-50" : ""}\"><button data-open-thread=\"${t.id}\" data-type=\"${t.type || "thread"}\" class=\"flex-1 text-left truncate flex items-center gap-2\">${icon ? `<i data-lucide="${icon}" class="h-4 w-4"></i>` : ""}${t.pinned ? "📌 " : ""}${esc(t.title || "Untitled")}${t.status === "modified" ? "*" : t.status === "new" ? "+" : ""}</button><button data-thread-menu=\"${t.id}\" class=\"h-8 w-8 rounded hover:bg-gray-100 flex items-center justify-center\" title=\"More\"><i data-lucide=\"more-horizontal\" class="h-4 w-4"></i></button></div>`;
 };
-var sortedThreads = [], isAddingThreads = false;
+var sortedThreads = [];
+var isAddingThreads = false;
 var THREAD_PAGE_SIZE = 50;
 async function renderThreads() {
 	sortedThreads = [...THREAD.list].filter((t) => t.status !== "deleted").sort((a, b) => {
@@ -1745,7 +1779,8 @@ function showSunePopover(btn, id) {
 }
 var hideSunesSyncPopover = () => {
 	el.sunesSyncPopover.classList.add("hidden");
-}, hideSuneSyncPopover = hideSunesSyncPopover;
+};
+var hideSuneSyncPopover = hideSunesSyncPopover;
 function showSunesSyncPopover(btn) {
 	el.sunesSyncPopover.classList.remove("hidden");
 	positionPopover(btn || el.suneSyncBtn, el.sunesSyncPopover);
@@ -1975,7 +2010,9 @@ $(el.sunesSyncDownloadBtn).on("click", () => {
 	hideSunesSyncPopover();
 	performSuneDownload(false);
 });
-var attachGen = 0, attachJob = null, attachQueue = Promise.resolve();
+var attachGen = 0;
+var attachJob = null;
+var attachQueue = Promise.resolve();
 function updateAttachBadge() {
 	const n = state.attachments.length;
 	el.attachBadge.textContent = attachJob ? Math.floor(attachJob.p * 100) + "%" : String(n);
@@ -2023,7 +2060,8 @@ function showAttachPopover() {
 	positionPopover(el.attachBtn, el.attachPopover);
 	icons();
 }
-var attachHold = null, attachHeld = false;
+var attachHold = null;
+var attachHeld = false;
 var holdAttach = () => {
 	attachHeld = true;
 	showAttachPopover();
@@ -2971,5 +3009,4 @@ Object.assign(window, {
 	gcStorage,
 	cleanSuneStorage
 });
-//#endregion
 export { __vitePreload as t };
