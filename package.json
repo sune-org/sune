@@ -9,12 +9,12 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "vite": "8.0.*",
-    "vite-plugin-html-inject": "1.1.*",
+    "vite": "8.3.*",
+    "vite-plugin-html-inject": "1.2.*",
     "vite-plugin-pwa": "1.2.*"
   },
   "dependencies": {
-    "@mediabunny/aac-encoder": "1.61.*",
-    "mediabunny": "1.61.*"
+    "@mediabunny/aac-encoder": "1.65.*",
+    "mediabunny": "1.65.*"
   }
 }
