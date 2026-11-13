@@ -4,6 +4,31 @@
 <load src="/src/parts/head.html" />
 </head>
 <body class="bg-white text-gray-900 selection:bg-black/10" x-data @click.window="if($event.target.closest('button')) haptic(); if(!document.getElementById('threadPopover').contains($event.target)&&!$event.target.closest('[data-thread-menu]')) hideThreadPopover(); if(!document.getElementById('sunePopover').contains($event.target)&&!$event.target.closest('[data-sune-menu]')) hideSunePopover(); if(!document.getElementById('userMenu').contains($event.target)&&!document.getElementById('userMenuBtn').contains($event.target)) document.getElementById('userMenu').classList.add('hidden')">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.5"></script>
+<script>
+// Tailwind 4 without cascade layers and with Tailwind 3's defaults (border, placeholder, form backgrounds, cursor, font stack, rem line heights, -sm radius/shadow/blur), so sunes written for v3 look the same.
+// The last four rules stop space-*/divide-* leaving a gap or line after the last visible child when hidden ones follow it.
+// Loaded in <body>, after every stylesheet in <head> (Vite moves the bundled one to the end), so utilities still win ties against them as in v3.
+// Added from a script because Vite tries to bundle an inline <style>.
+document.head.insertAdjacentHTML('beforeend', `<style type="text/tailwindcss">
+@import "tailwindcss/theme.css";
+@theme{--font-sans:ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";--radius-sm:.125rem;--shadow-sm:0 1px 2px 0 rgb(0 0 0/.05);--blur-sm:4px;
+--text-xs--line-height:1rem;--text-sm--line-height:1.25rem;--text-base--line-height:1.5rem;--text-lg--line-height:1.75rem;--text-xl--line-height:1.75rem;--text-2xl--line-height:2rem;--text-3xl--line-height:2.25rem;--text-4xl--line-height:2.5rem}
+@import "tailwindcss/preflight.css";
+*,::after,::before,::backdrop,::file-selector-button{border-color:#e5e7eb}
+input::placeholder,textarea::placeholder{color:#9ca3af}
+input,select,textarea{background-color:revert}
+input:where([type=button],[type=reset],[type=submit]){background-color:transparent}
+:where(button,[role="button"]){cursor:pointer}
+:where(:disabled){cursor:default}
+dialog{margin:auto}
+@import "tailwindcss/utilities.css";
+:where([class*="space-y-"]>:not(:has(~:not(.hidden,[hidden],[style*="display: none"],[style*="display:none"])))){margin-block-end:0}
+:where([class*="space-x-"]>:not(:has(~:not(.hidden,[hidden],[style*="display: none"],[style*="display:none"])))){margin-inline-end:0}
+:where([class*="divide-y"]>:not(:has(~:not(.hidden,[hidden],[style*="display: none"],[style*="display:none"])))){border-bottom-width:0}
+:where([class*="divide-x"]>:not(:has(~:not(.hidden,[hidden],[style*="display: none"],[style*="display:none"])))){border-inline-end-width:0}
+</style>`)
+</script>
 <div class="flex flex-col h-dvh max-h-dvh overflow-hidden">
 <load src="/src/parts/topbar.html" />
 <load src="/src/parts/chat.html" />
