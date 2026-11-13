@@ -1,8 +1,11 @@
-import mathjax3 from 'https://esm.sh/markdown-it-mathjax3@5.2.0';
 import { copyToClipboard } from './utils.js';
 
-export const md = window.md = window.markdownit({ html: false, linkify: true, typographer: true, breaks: true }).use(mathjax3);
+export const md = window.md = window.markdownit({ html: false, linkify: true, typographer: true, breaks: true });
 md.linkify.set({ fuzzyLink: true });
+
+// MathJax is about 1 MB, so it only loads the first time some text has a $ in it; that text re-renders once it's in
+let math, mathOn;
+const loadMath = () => math ||= import('https://esm.sh/markdown-it-mathjax3@5.2.0').then(m => (md.use(m.default), mathOn = 1), () => math = null);
 
 export function enhanceCodeBlocks(root, doHL = true) {
   window.$(root).find('pre>code').each((i, code) => {
@@ -28,4 +31,9 @@ export function enhanceCodeBlocks(root, doHL = true) {
 export const renderMarkdown = window.renderMarkdown = function (node, text, opt = { enhance: true, highlight: true }) {
   node.innerHTML = md.render(text);
   if (opt.enhance) enhanceCodeBlocks(node, opt.highlight);
+  if (mathOn || !text.includes('$')) return;
+  // Only the latest text of a node is kept, so a reply that kept streaming while MathJax loaded re-renders once
+  const waiting = node._md;
+  node._md = [text, opt];
+  if (!waiting) loadMath().then(() => { const a = node._md; delete node._md; mathOn && node.isConnected && renderMarkdown(node, ...a); });
 };

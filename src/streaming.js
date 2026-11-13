@@ -1,6 +1,6 @@
 import { el } from './dom.js';
 import { partsToText } from './utils.js';
-import { renderMarkdown, enhanceCodeBlocks } from './markdown.js';
+import { renderMarkdown } from './markdown.js';
 import { SUNE_LOGO_SVG } from './sune-logo.js';
 
 // The proxy's maxPayloadLength; it drops anything bigger with no useful close code
@@ -68,7 +68,7 @@ function paint(s,final){
   const b=onScreen(s)&&window.getBubbleById(s.rid);if(!b)return;
   const t=partsToText(s.msg);
   if(!t&&!final)return b.innerHTML=SUNE_LOGO_SVG;
-  renderMarkdown(b,t,{enhance:false});if(final)enhanceCodeBlocks(b,true)
+  renderMarkdown(b,t,{enhance:!!final,highlight:true})
 }
 
 async function write(s){
