@@ -9,8 +9,9 @@ Sune's own code is covered by [LICENSE](./LICENSE). This file covers third-party
 | [Workbox](https://github.com/GoogleChrome/workbox) | `dist/workbox-*.js`, `dist/sw.js` | MIT | Copyright 2018 Google LLC |
 | [Vite](https://github.com/vitejs/vite) (modulepreload polyfill) | `dist/assets/index-*.js` | MIT | Copyright (c) 2019-present, VoidZero Inc. and Vite contributors |
 | [vite-plugin-pwa](https://github.com/vite-pwa/vite-plugin-pwa) | `dist/registerSW.js`, `dist/manifest.webmanifest` | MIT | Copyright (c) 2020-PRESENT Anthony Fu |
+| [markdown-it-latex-plus](https://github.com/sune-org/markdown-it-latex-plus) | `dist/assets/index-*.js` | MIT-0 | Copyright 2026 PlanetRenox |
 
-All three are distributed under the MIT License:
+markdown-it-latex-plus is MIT No Attribution and asks for no notice. The other three are distributed under the MIT License:
 
 ```
 MIT License
@@ -49,7 +50,15 @@ These libraries are fetched by the browser from their CDNs and are not included 
 | [cash-dom](https://github.com/fabiospampinato/cash) | MIT |
 | [Lucide](https://github.com/lucide-icons/lucide) | ISC |
 | [markdown-it](https://github.com/markdown-it/markdown-it) | MIT |
-| [markdown-it-mathjax3](https://github.com/tani/markdown-it-mathjax3) | MIT |
+| [MathJax](https://github.com/mathjax/MathJax) | Apache-2.0 |
+| [XyJax-v4](https://github.com/sonoisa/XyJax-v4) | Apache-2.0 |
+| [TikZJax](https://github.com/drgrice1/tikzjax) | GPL-3.0-or-later (TeX files LPPL) |
+| [Mermaid](https://github.com/mermaid-js/mermaid) | MIT |
+| [viz-js](https://github.com/mdaines/viz-js) (Graphviz) | MIT (Graphviz EPL) |
+| [Vega](https://github.com/vega/vega) and [Vega-Lite](https://github.com/vega/vega-lite) | BSD-3-Clause |
+| [abcjs](https://github.com/paulrosen/abcjs) | MIT |
+| [SmilesDrawer](https://github.com/reymond-group/smilesDrawer) | MIT |
+| [DOMPurify](https://github.com/cure53/DOMPurify) | Apache-2.0 or MPL-2.0 |
 | [highlight.js](https://github.com/highlightjs/highlight.js) | BSD-3-Clause |
 | [github-markdown-css](https://github.com/sindresorhus/github-markdown-css) | MIT |
 | [localForage](https://github.com/localForage/localForage) | Apache-2.0 |
