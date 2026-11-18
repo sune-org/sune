@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-mgbeXjDA.js","assets/src-scQar_nB.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-Zi8jxvci.js","assets/src-scQar_nB.js"])))=>i.map(i=>d[i]);
 // \0vite/modulepreload-polyfill.js
 (function polyfill() {
 	const relList = document.createElement("link").relList;
@@ -148,7 +148,7 @@ var clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 var num = (v, d) => v == null || v === "" || isNaN(+v) ? d : +v;
 var int = (v, d) => v == null || v === "" || isNaN(parseInt(v)) ? d : parseInt(v);
 var gid = () => Math.random().toString(36).slice(2, 9);
-var esc = (s) => String(s).replace(/[&<>'"`]/g, (c) => ({
+var esc$1 = (s) => String(s).replace(/[&<>'"`]/g, (c) => ({
 	"&": "&amp;",
 	"<": "&lt;",
 	">": "&gt;",
@@ -258,120 +258,564 @@ var ts = () => {
 	const d = /* @__PURE__ */ new Date(), p = (n) => String(n).padStart(2, "0");
 	return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
 };
-// \0vite/preload-helper.js
-var scriptRel = "modulepreload";
-var assetsURL = function(dep) {
-	return "/" + dep;
+// node_modules/markdown-it-latex-plus/src/util.js
+var ENT = {
+	"&": "&amp;",
+	"<": "&lt;",
+	">": "&gt;",
+	"\"": "&quot;"
 };
-var seen = {};
-var isCssPreloadUrl = function isCssPreloadUrl(url) {
-	return url.pathname.endsWith(".css");
+var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ENT[c]);
+var unesc = (s) => s.replace(/&(amp|lt|gt|quot|#39|#x27|apos);/g, (_, e) => ({
+	amp: "&",
+	lt: "<",
+	gt: ">",
+	quot: "\""
+})[e] ?? "'");
+var msg = (e) => String(e?.message ?? e).replace(/\s+/g, " ").trim().slice(0, 300);
+var obj = (v) => v && typeof v === "object" && !Array.isArray(v);
+var merge = (a, ...r) => r.reduce((a, b) => {
+	for (const k in b ?? {}) a[k] = obj(a[k]) && obj(b[k]) ? merge({ ...a[k] }, b[k]) : b[k];
+	return a;
+}, a);
+var seen$1 = {};
+var script = (u) => seen$1[u] ||= new Promise((ok, no) => document.head.append(Object.assign(document.createElement("script"), {
+	src: u,
+	onload: ok,
+	onerror: () => (delete seen$1[u], no(Error(`could not load ${u}`)))
+})));
+var sheet = (u) => seen$1[u] ||= document.head.append(Object.assign(document.createElement("link"), {
+	rel: "stylesheet",
+	href: u
+})) ?? 1;
+var style = (id, css) => (document.getElementById(id) ?? document.head.appendChild(Object.assign(document.createElement("style"), { id }))).textContent = css;
+// node_modules/markdown-it-latex-plus/src/mathcfg.js
+var PACKAGES = [
+	"mathtools",
+	"enclose",
+	"colortbl",
+	"cases",
+	"empheq",
+	"upgreek",
+	"centernot",
+	"gensymb",
+	"textcomp",
+	"units",
+	"begingroup"
+];
+var config = (o, ...more) => {
+	const pk = [...PACKAGES, ...o.packages ?? []];
+	return merge({
+		loader: { load: ["ui/safe", ...pk.map((p) => `[tex]/${p}`)] },
+		tex: {
+			packages: { "[+]": pk },
+			autoload: {
+				bbm: [
+					"mathbbm",
+					"mathbbmss",
+					"mathbbmtt"
+				],
+				dsfont: ["mathds"]
+			},
+			macros: o.macros ?? {},
+			require: { allow: {
+				texhtml: false,
+				setoptions: false
+			} }
+		},
+		svg: { fontCache: "local" }
+	}, ...more, o.mathjax);
 };
-var preloadOnce = function preloadOnce(seen, href, preload) {
-	if (href in seen) return seen[href];
-	const promise = preload();
-	if (!promise) {
-		seen[href] = void 0;
-		return;
-	}
-	const preloadPromise = promise.then(() => {
-		seen[href] = void 0;
-	}, (err) => {
-		seen[href] = void 0;
-		throw err;
-	});
-	seen[href] = preloadPromise;
-	return preloadPromise;
+var clean = (h) => {
+	const m = h.match(/data-mjx-error="([^"]*)"/);
+	if (m) throw Error(unesc(m[1]));
+	return h.replace(/ data-latex(-item)?="[^"]*"/g, "");
 };
-var __vitePreload = function preload(baseModule, deps, importerUrl) {
-	let promise = Promise.resolve();
-	if (deps && deps.length > 0) {
-		let preloadedHrefs;
-		const cspNonceMeta = document.querySelector("meta[property=csp-nonce]");
-		const cspNonce = cspNonceMeta?.nonce || cspNonceMeta?.getAttribute("nonce");
-		function allSettled(promises) {
-			return Promise.all(promises.map((p) => Promise.resolve(p).then((value) => ({
-				status: "fulfilled",
-				value
-			}), (reason) => ({
-				status: "rejected",
-				reason
-			}))));
-		}
-		function importMetaResolve(specifier) {
-			if (import.meta.resolve) return new URL(import.meta.resolve(specifier));
-			return new URL(
-				specifier,
-				/** #__KEEP__ */
-				import.meta.url
-			);
-		}
-		promise = allSettled(deps.map((depString) => {
-			depString = assetsURL(depString, importerUrl);
-			const dep = importMetaResolve(depString);
-			const isCss = isCssPreloadUrl(dep);
-			return preloadOnce(seen, dep.href, () => {
-				if (preloadedHrefs === void 0) {
-					preloadedHrefs = {
-						all: /* @__PURE__ */ new Set(),
-						styles: /* @__PURE__ */ new Set()
-					};
-					const links = document.getElementsByTagName("link");
-					for (let i = links.length - 1; i >= 0; i--) {
-						const link = links[i];
-						preloadedHrefs.all.add(link.href);
-						if (link.rel === "stylesheet") preloadedHrefs.styles.add(link.href);
-					}
+var engine = (start) => {
+	let p, M, busy = 0, loads = Promise.resolve(), q = loads;
+	const load = (o) => p ||= start(o).then((m) => M = m);
+	const html = (n) => clean(M.startup.adaptor.outerHTML(n));
+	const RETRY = Object.assign(Error("MathJax is loading"), { retry: true });
+	return {
+		load,
+		ok: () => !!M,
+		css: () => M ? M.startup.adaptor.textContent(M.svgStylesheet()) : "",
+		sync(s, d) {
+			if (busy) throw RETRY;
+			try {
+				return M.texReset(), html(M.tex2svg(s, { display: !!d }));
+			} catch (e) {
+				if (e.retry) busy++, loads = Promise.allSettled([loads, e.retry]).finally(() => busy--);
+				throw e;
+			}
+		},
+		render(s, d, o) {
+			const go = async () => {
+				await load(o);
+				busy++;
+				try {
+					return await loads, M.texReset(), html(await M.tex2svgPromise(s, { display: !!d }));
+				} finally {
+					busy--;
 				}
-				if ((isCss ? preloadedHrefs.styles : preloadedHrefs.all).has(dep.href)) return;
-				const link = document.createElement("link");
-				link.rel = isCss ? "stylesheet" : scriptRel;
-				if (!isCss) link.as = "script";
-				link.crossOrigin = "";
-				link.href = dep.href;
-				if (cspNonce) link.setAttribute("nonce", cspNonce);
-				document.head.appendChild(link);
-				if (isCss) return new Promise((res, rej) => {
-					const handleSettle = (e) => {
-						link.removeEventListener("load", handleSettle);
-						link.removeEventListener("error", handleSettle);
-						if (e.type === "error") rej(/* @__PURE__ */ new Error(`Unable to preload CSS for ${dep}`));
-						else res(e);
-					};
-					link.addEventListener("load", handleSettle);
-					link.addEventListener("error", handleSettle);
-				});
-			});
-		}).filter((p) => p !== void 0));
-	}
-	function handlePreloadError(err) {
-		const e = new Event("vite:preloadError", { cancelable: true });
-		e.payload = err;
-		window.dispatchEvent(e);
-		if (!e.defaultPrevented) throw err;
-	}
-	return promise.then((res) => {
-		for (const item of res || []) {
-			if (item.status !== "rejected") continue;
-			handlePreloadError(item.reason);
+			};
+			const r = q.then(go, go);
+			q = r.catch(() => {});
+			return r;
 		}
-		return baseModule().catch(handlePreloadError);
-	});
+	};
 };
+// node_modules/markdown-it-latex-plus/src/math.browser.js
+var MATHJAX = "npm/mathjax@4.1.3/tex-svg.js";
+var XYPIC = "gh/sonoisa/XyJax-v4@4.0.4/build";
+var { load, ok, css, sync, render } = engine((o) => globalThis.MathJax?.tex2svgPromise ? Promise.resolve(globalThis.MathJax) : new Promise((ok, no) => {
+	const xy = o.xypic !== false;
+	globalThis.MathJax = config(o, {
+		options: {
+			enableMenu: false,
+			enableEnrichment: false,
+			enableSpeech: false,
+			enableBraille: false,
+			enableExplorer: false
+		},
+		startup: {
+			typeset: false,
+			ready() {
+				MathJax.startup.defaultReady();
+				MathJax.startup.promise.then(() => ok(MathJax), no);
+			}
+		}
+	});
+	if (xy) MathJax.loader.paths = {
+		mlp: o.cdn + XYPIC,
+		...MathJax.loader.paths
+	}, MathJax.loader.load.push("[mlp]/xypic.js"), MathJax.tex.packages["[+]"].push("xypic");
+	script(o.cdn + MATHJAX).catch(no);
+}));
+// node_modules/markdown-it-latex-plus/src/tikz.js
+var KNOWN = [
+	"amsmath",
+	"amssymb",
+	"amsfonts",
+	"amstext",
+	"array",
+	"pgfplots",
+	"tikz-cd",
+	"tikz-3dplot",
+	"chemfig",
+	"circuitikz",
+	"etoolbox",
+	"xparse",
+	"hf-tikz"
+];
+var NEEDS = [
+	["pgfplots", /\\begin\{(axis|semilog[xy]axis|loglogaxis|polaraxis)\}|\\addplot|\\pgfplotsset/],
+	["tikz-cd", /\\begin\{tikzcd\}/],
+	["circuitikz", /\\begin\{circuitikz\}|\\ctikzset/],
+	["chemfig", /\\chemfig|\\schemestart|\\chemname|\\setchemfig/],
+	["tikz-3dplot", /\\tdplot/],
+	["array", /\\begin\{(tabular|array)\}/],
+	["amsmath", /\\(text|dfrac|tfrac|binom|boldsymbol|operatorname)\b|\\begin\{(align|cases|[pbvBV]?matrix)\*?\}/],
+	["amssymb", /\\(mathbb|mathfrak|therefore|because|leqslant|geqslant|nmid|varnothing)\b/]
+];
+var tikzdoc = (src) => {
+	const packages = {}, libs = /* @__PURE__ */ new Set();
+	let pre = "", body = src.replace(/\\documentclass(\[[^\]]*\])?\{[^}]*\}/g, "");
+	const doc = body.match(/\\begin\{document\}([\s\S]*?)\\end\{document\}/);
+	if (doc) pre = body.slice(0, doc.index), body = doc[1];
+	const lift = (s) => s.replace(/\\usepackage(?:\[([^\]]*)\])?\{([^}]*)\}/g, (_, opt, names) => (names.split(",").map((n) => n.trim()).forEach((n) => KNOWN.includes(n) && (packages[n] ??= opt ?? "")), "")).replace(/\\usetikzlibrary\{([^}]*)\}/g, (_, l) => (l.split(",").forEach((x) => x.trim() && libs.add(x.trim())), ""));
+	pre = lift(pre), body = lift(body).trim();
+	for (const [name, re] of NEEDS) re.test(pre + body) && (packages[name] ??= "");
+	if ("pgfplots" in packages && !/compat\s*=/.test(pre + body)) pre += "\\pgfplotsset{compat=1.16}";
+	if (!/\\begin\{(tikzpicture|tikzcd|circuitikz)\}|\\chemfig|\\schemestart|\\tikz\b/.test(body)) body = `\\begin{tikzpicture}\\node{${body}};\\end{tikzpicture}`;
+	return {
+		body,
+		packages,
+		libraries: [...libs].join(","),
+		preamble: pre.trim()
+	};
+};
+// node_modules/markdown-it-latex-plus/src/engines.js
+var LIBS = {
+	dompurify: ["npm/dompurify@3.4.18/dist/purify.min.js", "DOMPurify"],
+	mermaid: ["npm/mermaid@12.3.0/dist/mermaid.esm.min.mjs"],
+	viz: ["npm/@viz-js/viz@3.31.0/dist/viz-global.js", "Viz"],
+	vega: ["npm/vega@6.4.0/build/vega.min.js", "vega"],
+	vegaLite: ["npm/vega-lite@6.5.0/build/vega-lite.min.js", "vegaLite"],
+	abcjs: ["npm/abcjs@6.7.2/dist/abcjs-basic-min.js", "ABCJS"],
+	smiles: ["npm/smiles-drawer@2.4.2/dist/smiles-drawer.min.js", "SmilesDrawer"]
+};
+var engines_default = (o) => {
+	const got = {};
+	const lib = (name) => got[name] ||= (async () => {
+		const [path, global] = LIBS[name], m = await (o.libs?.[name]?.() ?? (global ? script(o.cdn + path).then(() => globalThis[global]) : import(
+			/* @vite-ignore */
+			o.cdn + path
+)));
+		return m?.default ?? m;
+	})();
+	const stage = (...kids) => {
+		const d = Object.assign(document.createElement("div"), { style: "position:absolute;left:-99999px;top:0;width:720px" });
+		d.append(...kids);
+		return d;
+	};
+	const mount = (d) => document.body.appendChild(d);
+	let ids = 0;
+	const purify = async (svg, fix) => {
+		const P = await lib("dompurify"), t = document.createElement("template");
+		t.innerHTML = P.sanitize(svg, { USE_PROFILES: {
+			svg: true,
+			svgFilters: true
+		} });
+		const root = t.content.querySelector("svg");
+		if (!root) throw Error("nothing to draw");
+		fix?.(root);
+		const [w, h] = ["width", "height"].map((k) => parseFloat(root.getAttribute(k)));
+		w && h && !root.hasAttribute("viewBox") && root.setAttribute("viewBox", `0 0 ${w} ${h}`);
+		const map = {}, n = ++ids;
+		for (const e of root.querySelectorAll("[id]")) e.id = map[e.id] = `mlp${n}-${e.id}`;
+		for (const e of root.querySelectorAll("*")) for (const a of e.attributes) {
+			const v = a.value.replace(/url\(["']?#([^"')]+)["']?\)/g, (m, id) => map[id] ? `url(#${map[id]})` : m);
+			a.value = /href$/.test(a.name) && v[0] === "#" && map[v.slice(1)] ? "#" + map[v.slice(1)] : v;
+		}
+		return root.outerHTML;
+	};
+	const flatten = (root) => root.querySelectorAll("svg").forEach((s) => {
+		const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+		g.append(...s.childNodes), s.replaceWith(g);
+	});
+	let viz, merm, n = 0;
+	return {
+		svg: { render: (s) => purify(s) },
+		tikz: { async render(src) {
+			const { body, packages, libraries, preamble } = tikzdoc(src), base = o.tikz?.base ?? "https://markdown-it-latex-plus.pages.dev/tikzjax/";
+			const s = Object.assign(document.createElement("script"), {
+				type: "text/tikz",
+				textContent: body
+			}), at = stage(s);
+			Object.assign(s.dataset, {
+				texPackages: JSON.stringify(packages),
+				...libraries && { tikzLibraries: libraries },
+				...preamble && { addToPreamble: preamble }
+			});
+			sheet(base + "fonts.css");
+			const done = new Promise((ok, no) => {
+				at.addEventListener("tikzjax-load-finished", (e) => ok(e.target.outerHTML));
+				new MutationObserver(() => at.querySelector("img") && (at.querySelector("img").remove(), no(Error("TeX could not compile this figure")))).observe(at, {
+					childList: true,
+					subtree: true
+				});
+				setTimeout(() => no(Error("TeX took too long")), o.tikz?.timeout ?? 9e4);
+			});
+			mount(at);
+			try {
+				return await script(base + "tikzjax.js").then(() => done).then((s) => purify(s, flatten));
+			} finally {
+				at.remove();
+			}
+		} },
+		mermaid: { async render(src) {
+			const m = await lib("mermaid"), id = `mlp-mermaid-${++n}`;
+			merm ||= (m.initialize({
+				startOnLoad: false,
+				securityLevel: "strict",
+				theme: "neutral",
+				...o.mermaid
+			}), 1);
+			try {
+				return (await m.render(id, src)).svg;
+			} finally {
+				for (const x of [id, "d" + id]) document.getElementById(x)?.remove();
+			}
+		} },
+		dot: { async render(src) {
+			const v = await (viz ||= lib("viz").then((V) => V.instance()));
+			return purify(v.renderString(src, {
+				format: "svg",
+				...o.dot
+			}));
+		} },
+		"vega-lite": { async render(src) {
+			const vega = await lib("vega"), lite = await lib("vegaLite"), spec = JSON.parse(src);
+			let blocked;
+			const loader = o.vega?.loader ?? Object.assign(vega.loader(), { load: async (u) => {
+				throw Error(blocked = `remote data is turned off (${u}); put the values in the spec`);
+			} });
+			const full = /\/vega\/v\d/.test(spec.$schema ?? "") ? spec : lite.compile(spec).spec;
+			const svg = await new vega.View(vega.parse(full), {
+				renderer: "none",
+				loader,
+				logLevel: vega.Error
+			}).toSVG();
+			if (blocked) throw Error(blocked);
+			return purify(svg);
+		} },
+		abc: { async render(src) {
+			const A = await lib("abcjs"), at = mount(stage());
+			try {
+				A.renderAbc(at, src, {
+					staffwidth: 640,
+					...o.abc
+				});
+				return await purify(at.innerHTML);
+			} finally {
+				at.remove();
+			}
+		} },
+		smiles: { async render(src) {
+			const S = await lib("smiles"), at = mount(stage()), el = at.appendChild(document.createElementNS("http://www.w3.org/2000/svg", "svg"));
+			const size = {
+				width: 340,
+				height: 230,
+				...o.smiles
+			};
+			for (const k of ["width", "height"]) el.setAttribute(k, size[k]);
+			el.setAttribute("viewBox", `0 0 ${size.width} ${size.height}`);
+			try {
+				await new Promise((ok, no) => S.parse(src.trim(), (t) => {
+					try {
+						new S.SvgDrawer(size).draw(t, el, size.theme ?? "light");
+						ok();
+					} catch (e) {
+						no(e);
+					}
+				}, no));
+				return await purify(el.outerHTML);
+			} finally {
+				at.remove();
+			}
+		} }
+	};
+};
+// node_modules/markdown-it-latex-plus/src/rules.js
+var ENV = /^\\begin\{((?:equation|align|alignat|flalign|gather|multline|eqnarray|displaymath|prooftree|CD)\*?|tikzpicture|tikzcd|circuitikz)\}/;
+var TIKZ = /^(tikz|circuitikz)/;
+var escaped = (s, i) => {
+	let n = 0;
+	while (s[--i] === "\\") n++;
+	return n & 1;
+};
+var find = (s, close, i) => {
+	for (; (i = s.indexOf(close, i)) >= 0; i += close.length) if (!escaped(s, i)) return i;
+	return -1;
+};
+var inline = (d) => (state, silent) => {
+	const s = state.src, p = state.pos, c = s[p], n = s[p + 1];
+	let open, close, display;
+	if (c === "$" && d.dollars) display = n === "$", open = close = display ? "$$" : "$";
+	else if (c === "\\" && (n === "(" || n === "[") && d.brackets) display = n === "[", open = c + n, close = display ? "\\]" : "\\)";
+	else return false;
+	const a = p + open.length;
+	if (open === "$" && (!s[a] || /\s/.test(s[a]))) return false;
+	let e = find(s, close, a);
+	if (open === "$" && e >= 0 && (/\s/.test(s[e - 1]) || /\d/.test(s[e + 1] ?? ""))) e = -1;
+	if (e < 0 || e >= state.posMax || !s.slice(a, e).trim()) {
+		if (open !== "$$") return false;
+		if (!silent) state.pending += open;
+		state.pos = a;
+		return true;
+	}
+	if (!silent) Object.assign(state.push("math_inline", "math", 0), {
+		markup: open,
+		content: s.slice(a, e),
+		meta: { display }
+	});
+	state.pos = e + close.length;
+	return true;
+};
+var block = (d, envs) => (state, start, end, silent) => {
+	if (state.sCount[start] - state.blkIndent >= 4) return false;
+	const { src, bMarks, eMarks, tShift, sCount } = state;
+	const text = (l) => src.slice(bMarks[l] + tShift[l], eMarks[l]).trimEnd(), first = text(start);
+	let open, close, m;
+	if (d.dollars && first.startsWith("$$")) open = close = "$$";
+	else if (d.brackets && first.startsWith("\\[")) open = "\\[", close = "\\]";
+	else if (envs && (m = first.match(ENV))) open = "", close = `\\end{${m[1]}}`;
+	else return false;
+	let last = start;
+	if (!(first.endsWith(close) && first.length >= open.length + close.length)) for (last++;; last++) {
+		if (last >= end || bMarks[last] + tShift[last] < eMarks[last] && sCount[last] < state.blkIndent) return false;
+		if (text(last).endsWith(close)) break;
+	}
+	if (silent) return true;
+	const keep = m ? close.length : 0, body = last === start ? first.slice(open.length, first.length - close.length + keep) : [
+		first.slice(open.length),
+		state.getLines(start + 1, last, sCount[start], false),
+		text(last).slice(0, text(last).length - close.length + keep)
+	].join("\n");
+	const tikz = m && TIKZ.test(m[1]);
+	Object.assign(state.push(tikz ? "mlp_block" : "math_block", "math", 0), {
+		block: true,
+		content: body.trim(),
+		map: [start, last + 1],
+		markup: open || m[0],
+		meta: { kind: tikz ? "tikz" : "math" }
+	});
+	state.line = last + 1;
+	return true;
+};
+var closed = (t, lines) => new RegExp(`^[\\s>]*${t.markup[0] === "`" ? "`" : "~"}{${t.markup.length},}\\s*$`).test(lines[t.map[1] - 1] ?? "") && t.map[1] - t.map[0] > 1;
+// node_modules/markdown-it-latex-plus/src/css.js
+var base = `
+.mlp-math mjx-container[jax="SVG"]>svg{display:inline}
+.mlp-display{display:block;margin:1em 0;text-align:center;overflow-x:auto;overflow-y:hidden}
+.mlp-display mjx-container[jax="SVG"][display="true"]{margin:0}
+.mlp-pending,.mlp-error{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9em;white-space:pre-wrap}
+.mlp-pending{opacity:.6}
+.mlp-math.mlp-error{text-decoration:underline wavy #c8372d;text-underline-offset:3px}
+.mlp-block{margin:1em 0;padding:14px;border-radius:10px;background:#fff;color:#111;text-align:center;overflow-x:auto}
+.mlp-block>svg{display:block;margin:0 auto;max-width:100%;height:auto}
+.mlp-tikz{padding:22px 14px}
+.mlp-tikz svg{overflow:visible}
+.mlp-svg>svg,.mlp-abc>svg{max-height:26em}
+.mlp-block.mlp-pending,.mlp-block.mlp-error{padding:0;background:none;color:inherit;text-align:left}
+.mlp-block pre{margin:0}
+.mlp-msg{margin:.4em 0 0;font:500 .85em system-ui,sans-serif;color:#c8372d}
+`;
+// node_modules/markdown-it-latex-plus/src/index.js
+var CDN = "https://cdn.jsdelivr.net/";
+var KINDS = [
+	"tikz",
+	"mermaid",
+	"dot",
+	"vega-lite",
+	"abc",
+	"smiles",
+	"svg"
+];
+var ALIAS = {
+	pgfplots: "tikz",
+	tikzcd: "tikz",
+	circuitikz: "tikz",
+	chemfig: "tikz",
+	graphviz: "dot",
+	vegalite: "vega-lite",
+	abcjs: "abc"
+};
+var DOM = typeof document !== "undefined";
+var runtime = (opt = {}) => {
+	const o = {
+		cdn: CDN,
+		delimiters: "all",
+		environments: true,
+		cache: 500,
+		...opt
+	};
+	const E = {
+		...engines_default(o),
+		...o.renderers
+	}, cache = /* @__PURE__ */ new Map(), pending = /* @__PURE__ */ new Map(), misses = [];
+	const key = (k, src, d) => `${k}${d ? 1 : 0}\0${src}`;
+	const put = (k, v) => (cache.set(k, v), cache.size > o.cache && cache.delete(cache.keys().next().value), v);
+	const wrap = (tag, cls, kind, inner, attr = "") => `<${tag} class="mlp ${cls}" data-mlp="${kind}"${attr}>${inner}</${tag}>`;
+	const code = (src) => `<pre><code>${esc(src)}</code></pre>`;
+	const get = (k, src, d) => {
+		const K = key(k, src, d);
+		if (cache.has(K)) return Promise.resolve(cache.get(K));
+		if (!pending.has(K)) pending.set(K, Promise.resolve().then(() => k === "math" ? render(src, d, o) : E[k].render(src)).then((h) => ({ h }), (e) => ({ e: msg(e) })).then((v) => (pending.delete(K), put(K, v))));
+		return pending.get(K);
+	};
+	const html = {
+		math(src, d, blk) {
+			const tag = blk ? "div" : "span", cls = `mlp-math${d ? " mlp-display" : ""}`, K = key("math", src, d);
+			let v = cache.get(K);
+			if (!v && ok()) try {
+				v = put(K, { h: sync(src, d) });
+			} catch (e) {
+				e.retry || (v = put(K, { e: msg(e) }));
+			}
+			if (!v) return rt.collect && misses.push([
+				"math",
+				src,
+				d
+			]), wrap(tag, `${cls} mlp-pending`, "math", esc(src), d ? " data-d=\"1\"" : "");
+			return v.e ? wrap(tag, `${cls} mlp-error`, "math", esc(src), ` title="${esc(v.e)}"`) : wrap(tag, cls, "math", v.h);
+		},
+		block(k, src) {
+			const v = cache.get(key(k, src));
+			if (!v) return rt.collect && E[k] && misses.push([k, src]), wrap("div", "mlp-block mlp-pending", k, code(src), ` data-src="${esc(src)}"`);
+			return v.e ? wrap("div", "mlp-block mlp-error", k, `${code(src)}<p class="mlp-msg">${esc(v.e)}</p>`) : wrap("div", `mlp-block mlp-${k}`, k, v.h);
+		}
+	};
+	const rt = {
+		options: o,
+		cache,
+		misses,
+		html,
+		get,
+		kind: (lang) => {
+			const k = ALIAS[lang] ?? lang;
+			if ((KINDS.includes(k) || k in E) && o.blocks?.[k] !== false) return k;
+		},
+		css: () => base + css(),
+		ready: () => load(o).then(() => {
+			DOM && o.css !== false && style("mlp-css", rt.css());
+		}),
+		async hydrate(root = document) {
+			DOM && o.css !== false && !document.getElementById("mlp-css") && style("mlp-css", rt.css());
+			const els = [...root.querySelectorAll(".mlp-pending")];
+			await Promise.all(els.map(async (el) => {
+				const k = el.dataset.mlp, src = el.dataset.src ?? el.textContent, d = !!el.dataset.d;
+				if (k !== "math" && !E[k]) return;
+				k === "math" && await rt.ready().catch(() => {});
+				await get(k, src, d);
+				if (el.isConnected && el.classList.contains("mlp-pending")) el.outerHTML = k === "math" ? html.math(src, d, el.tagName === "DIV") : html.block(k, src);
+			}));
+		}
+	};
+	return rt;
+};
+function latexPlus(md, opt) {
+	const rt = runtime(opt), o = rt.options;
+	const d = {
+		dollars: o.delimiters !== "brackets",
+		brackets: o.delimiters !== "dollars"
+	};
+	md.inline.ruler.before("escape", "math_inline", inline(d));
+	md.block.ruler.before("fence", "math_block", block(d, o.environments), { alt: [
+		"paragraph",
+		"reference",
+		"blockquote",
+		"list"
+	] });
+	md.core.ruler.push("mlp_fence", (state) => {
+		const lines = state.src.split("\n");
+		for (const t of state.tokens) {
+			const k = t.type === "fence" && rt.kind(t.info.trim().split(/\s+/)[0].toLowerCase());
+			if (k && closed(t, lines)) t.meta = {
+				...t.meta,
+				mlp: k
+			};
+		}
+	});
+	const fence = md.renderer.rules.fence;
+	Object.assign(md.renderer.rules, {
+		math_inline: (t, i) => rt.html.math(t[i].content, t[i].meta.display, 0),
+		math_block: (t, i) => rt.html.math(t[i].content, 1, 1) + "\n",
+		mlp_block: (t, i) => rt.html.block(t[i].meta.kind, t[i].content) + "\n",
+		fence: (t, i, ...a) => t[i].meta?.mlp ? rt.html.block(t[i].meta.mlp, t[i].content.replace(/\n$/, "")) + "\n" : fence(t, i, ...a)
+	});
+	md.latexPlus = Object.assign(rt, { async render(src, env) {
+		await rt.ready();
+		rt.collect = 1;
+		const out = md.render(src, env), todo = rt.misses.splice(0);
+		rt.collect = 0;
+		if (!todo.length) return out;
+		await Promise.all(todo.map((a) => rt.get(...a)));
+		return md.render(src, env);
+	} });
+}
 // src/markdown.js
 var md = window.md = window.markdownit({
 	html: false,
 	linkify: true,
 	typographer: true,
 	breaks: true
-});
+}).use(latexPlus);
 md.linkify.set({ fuzzyLink: true });
-var math;
-var mathOn;
-var loadMath = () => math ||= __vitePreload(() => import("https://esm.sh/markdown-it-mathjax3@5.2.0").then((m) => (md.use(m.default), mathOn = 1), () => math = null), []);
 function enhanceCodeBlocks(root, doHL = true) {
 	window.$(root).find("pre>code").each((i, code) => {
-		if (code.textContent.length > 2e5) return;
+		if (code.textContent.length > 2e5 || code.closest(".mlp")) return;
 		const $pre = window.$(code).parent().addClass("relative rounded-xl border border-gray-200");
 		if (!$pre.find(".code-actions").length) {
 			const len = code.textContent.length, countText = len >= 1e3 ? (len / 1e3).toFixed(1) + "K" : len;
@@ -395,14 +839,7 @@ var renderMarkdown = window.renderMarkdown = function(node, text, opt = {
 }) {
 	node.innerHTML = md.render(text);
 	if (opt.enhance) enhanceCodeBlocks(node, opt.highlight);
-	if (mathOn || !text.includes("$")) return;
-	const waiting = node._md;
-	node._md = [text, opt];
-	if (!waiting) loadMath().then(() => {
-		const a = node._md;
-		delete node._md;
-		mathOn && node.isConnected && renderMarkdown(node, ...a);
-	});
+	md.latexPlus.hydrate(node);
 };
 // src/sune-logo.js
 var SUNE_LOGO_SVG = `
@@ -924,6 +1361,106 @@ function kbBind() {
 		}, 0);
 	});
 }
+// \0vite/preload-helper.js
+var scriptRel = "modulepreload";
+var assetsURL = function(dep) {
+	return "/" + dep;
+};
+var seen = {};
+var isCssPreloadUrl = function isCssPreloadUrl(url) {
+	return url.pathname.endsWith(".css");
+};
+var preloadOnce = function preloadOnce(seen, href, preload) {
+	if (href in seen) return seen[href];
+	const promise = preload();
+	if (!promise) {
+		seen[href] = void 0;
+		return;
+	}
+	const preloadPromise = promise.then(() => {
+		seen[href] = void 0;
+	}, (err) => {
+		seen[href] = void 0;
+		throw err;
+	});
+	seen[href] = preloadPromise;
+	return preloadPromise;
+};
+var __vitePreload = function preload(baseModule, deps, importerUrl) {
+	let promise = Promise.resolve();
+	if (deps && deps.length > 0) {
+		let preloadedHrefs;
+		const cspNonceMeta = document.querySelector("meta[property=csp-nonce]");
+		const cspNonce = cspNonceMeta?.nonce || cspNonceMeta?.getAttribute("nonce");
+		function allSettled(promises) {
+			return Promise.all(promises.map((p) => Promise.resolve(p).then((value) => ({
+				status: "fulfilled",
+				value
+			}), (reason) => ({
+				status: "rejected",
+				reason
+			}))));
+		}
+		function importMetaResolve(specifier) {
+			if (import.meta.resolve) return new URL(import.meta.resolve(specifier));
+			return new URL(
+				specifier,
+				/** #__KEEP__ */
+				import.meta.url
+			);
+		}
+		promise = allSettled(deps.map((depString) => {
+			depString = assetsURL(depString, importerUrl);
+			const dep = importMetaResolve(depString);
+			const isCss = isCssPreloadUrl(dep);
+			return preloadOnce(seen, dep.href, () => {
+				if (preloadedHrefs === void 0) {
+					preloadedHrefs = {
+						all: /* @__PURE__ */ new Set(),
+						styles: /* @__PURE__ */ new Set()
+					};
+					const links = document.getElementsByTagName("link");
+					for (let i = links.length - 1; i >= 0; i--) {
+						const link = links[i];
+						preloadedHrefs.all.add(link.href);
+						if (link.rel === "stylesheet") preloadedHrefs.styles.add(link.href);
+					}
+				}
+				if ((isCss ? preloadedHrefs.styles : preloadedHrefs.all).has(dep.href)) return;
+				const link = document.createElement("link");
+				link.rel = isCss ? "stylesheet" : scriptRel;
+				if (!isCss) link.as = "script";
+				link.crossOrigin = "";
+				link.href = dep.href;
+				if (cspNonce) link.setAttribute("nonce", cspNonce);
+				document.head.appendChild(link);
+				if (isCss) return new Promise((res, rej) => {
+					const handleSettle = (e) => {
+						link.removeEventListener("load", handleSettle);
+						link.removeEventListener("error", handleSettle);
+						if (e.type === "error") rej(/* @__PURE__ */ new Error(`Unable to preload CSS for ${dep}`));
+						else res(e);
+					};
+					link.addEventListener("load", handleSettle);
+					link.addEventListener("error", handleSettle);
+				});
+			});
+		}).filter((p) => p !== void 0));
+	}
+	function handlePreloadError(err) {
+		const e = new Event("vite:preloadError", { cancelable: true });
+		e.payload = err;
+		window.dispatchEvent(e);
+		if (!e.defaultPrevented) throw err;
+	}
+	return promise.then((res) => {
+		for (const item of res || []) {
+			if (item.status !== "rejected") continue;
+			handlePreloadError(item.reason);
+		}
+		return baseModule().catch(handlePreloadError);
+	});
+};
 // src/video.js
 var SHORT_SIDE = 360;
 var FPS = 4;
@@ -942,7 +1479,7 @@ var loadMb = async () => {
 		sampleRate: 48e3,
 		bitrate: AUDIO_BPS
 	})) (await __vitePreload(async () => {
-		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-mgbeXjDA.js");
+		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-Zi8jxvci.js");
 		return { registerAacEncoder };
 	}, __vite__mapDeps([0,1]))).registerAacEncoder();
 	return mb = m;
@@ -1179,7 +1716,7 @@ var processSuneIncludes = async (html, depth = 0) => {
 		if (!n.hasAttribute("src")) return n.replaceWith(...Array.from(n.childNodes));
 		if (n.hasAttribute("private") && depth > 0) return n.remove();
 		const s = n.getAttribute("src"), u = resolveSuneSrc(s);
-		if (!u) return n.replaceWith(document.createComment(` Invalid src: ${esc(s)} `));
+		if (!u) return n.replaceWith(document.createComment(` Invalid src: ${esc$1(s)} `));
 		try {
 			const r = await fetch(u);
 			if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -1188,7 +1725,7 @@ var processSuneIncludes = async (html, depth = 0) => {
 			const subDoc = Document.parseHTMLUnsafe ? Document.parseHTMLUnsafe(subHtml) : new DOMParser().parseFromString(subHtml, "text/html");
 			n.replaceWith(...Array.from(subDoc.body.childNodes));
 		} catch (e) {
-			n.replaceWith(document.createComment(` Fetch failed: ${esc(u)} `));
+			n.replaceWith(document.createComment(` Fetch failed: ${esc$1(u)} `));
 		}
 	}));
 	return c.innerHTML;
@@ -1552,12 +2089,12 @@ var getModelShort = (m) => {
 var reflectActiveSune = async (html = true) => {
 	const a = SUNE.active;
 	el.suneBtnTop.title = `Settings — ${a.name}`;
-	el.suneBtnTop.innerHTML = a.avatar ? `<img src="${esc(a.avatar)}" alt="" class="h-10 w-10 rounded-full object-cover"/>` : "✺";
+	el.suneBtnTop.innerHTML = a.avatar ? `<img src="${esc$1(a.avatar)}" alt="" class="h-10 w-10 rounded-full object-cover"/>` : "✺";
 	el.footer.classList.toggle("hidden", !!a.settings.hide_composer);
 	if (html) await renderSuneHTML();
 	icons();
 };
-var suneRow = (a) => `<div class="relative flex items-center gap-2 px-3 py-2 ${a.pinned ? "bg-yellow-50" : ""}"><button data-sune-id="${a.id}" class="flex-1 text-left flex items-center gap-2 ${a.id === SUNE.id ? "font-medium" : ""}">${a.avatar ? `<img src="${esc(a.avatar)}" alt="" class="h-8 w-8 rounded-full object-cover"/>` : `<span class="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center">✺</span>`}<span class="truncate">${a.pinned ? "📌 " : ""}${esc(a.name)}</span></button><button data-sune-menu="${a.id}" class="h-8 w-8 rounded hover:bg-gray-100 flex items-center justify-center" title="More"><i data-lucide="more-horizontal" class="h-4 w-4"></i></button></div>`;
+var suneRow = (a) => `<div class="relative flex items-center gap-2 px-3 py-2 ${a.pinned ? "bg-yellow-50" : ""}"><button data-sune-id="${a.id}" class="flex-1 text-left flex items-center gap-2 ${a.id === SUNE.id ? "font-medium" : ""}">${a.avatar ? `<img src="${esc$1(a.avatar)}" alt="" class="h-8 w-8 rounded-full object-cover"/>` : `<span class="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center">✺</span>`}<span class="truncate">${a.pinned ? "📌 " : ""}${esc$1(a.name)}</span></button><button data-sune-menu="${a.id}" class="h-8 w-8 rounded hover:bg-gray-100 flex items-center justify-center" title="More"><i data-lucide="more-horizontal" class="h-4 w-4"></i></button></div>`;
 var renderSidebar = window.renderSidebar = () => {
 	const list = [...SUNE.list].sort((a, b) => b.pinned - a.pinned);
 	el.suneList.innerHTML = list.map(suneRow).join("");
@@ -1568,7 +2105,7 @@ var renderUserUI = window.renderUserUI = () => {
 	const a = USER.avatar;
 	if (a) {
 		el.userMenuAvatar.className = "h-6 w-6 rounded-full overflow-hidden shrink-0";
-		el.userMenuAvatar.innerHTML = `<img src="${esc(a)}" class="h-full w-full object-cover"/>`;
+		el.userMenuAvatar.innerHTML = `<img src="${esc$1(a)}" class="h-full w-full object-cover"/>`;
 	} else {
 		el.userMenuAvatar.className = "h-6 w-6 rounded-full bg-gray-900 text-white flex items-center justify-center shrink-0 text-xs";
 		el.userMenuAvatar.textContent = "👤";
@@ -1580,7 +2117,7 @@ var getSuneLabel = (m) => {
 function _createMessageRow(m) {
 	const role = typeof m === "string" ? m : m && m.role || "assistant", meta = typeof m === "string" ? {} : m || {}, isUser = role === "user", $row = $("<div class=\"flex flex-col gap-2\"></div>"), $head = $("<div class=\"flex items-center gap-2 px-4\"></div>"), $avatar = $("<div></div>");
 	const uAva = isUser ? USER.avatar : meta.avatar;
-	uAva ? $avatar.attr("class", "msg-avatar shrink-0 h-7 w-7 rounded-full overflow-hidden").html(`<img src="${esc(uAva)}" class="h-full w-full object-cover">`) : $avatar.attr("class", `${isUser ? "bg-gray-900 text-white" : "bg-gray-200 text-gray-900"} msg-avatar shrink-0 h-7 w-7 rounded-full flex items-center justify-center`).text(isUser ? "👤" : "✺");
+	uAva ? $avatar.attr("class", "msg-avatar shrink-0 h-7 w-7 rounded-full overflow-hidden").html(`<img src="${esc$1(uAva)}" class="h-full w-full object-cover">`) : $avatar.attr("class", `${isUser ? "bg-gray-900 text-white" : "bg-gray-200 text-gray-900"} msg-avatar shrink-0 h-7 w-7 rounded-full flex items-center justify-center`).text(isUser ? "👤" : "✺");
 	const $name = $("<div class=\"text-xs font-medium text-gray-500\"></div>").text(isUser ? USER.name : getSuneLabel(meta));
 	const $deleteBtn = $("<button class=\"p-1.5 rounded-lg hover:bg-gray-200 text-gray-400 hover:text-red-500\" title=\"Delete message\"><i data-lucide=\"x\" class=\"h-4 w-4\"></i></button>").on("click", async (e) => {
 		e.stopPropagation();
@@ -1761,7 +2298,7 @@ async function ensureThreadOnFirstUser(text) {
 }
 var threadRow = (t) => {
 	const icon = t.type === "folder" ? "folder" : t.type === "file" ? "file-text" : "";
-	return `<div class=\"relative flex items-center gap-2 px-3 py-2 ${t.pinned ? "bg-yellow-50" : ""}\"><button data-open-thread=\"${t.id}\" data-type=\"${t.type || "thread"}\" class=\"flex-1 text-left truncate flex items-center gap-2\">${icon ? `<i data-lucide="${icon}" class="h-4 w-4"></i>` : ""}${t.pinned ? "📌 " : ""}${esc(t.title || "Untitled")}${t.status === "modified" ? "*" : t.status === "new" ? "+" : ""}</button><button data-thread-menu=\"${t.id}\" class=\"h-8 w-8 rounded hover:bg-gray-100 flex items-center justify-center\" title=\"More\"><i data-lucide=\"more-horizontal\" class="h-4 w-4"></i></button></div>`;
+	return `<div class=\"relative flex items-center gap-2 px-3 py-2 ${t.pinned ? "bg-yellow-50" : ""}\"><button data-open-thread=\"${t.id}\" data-type=\"${t.type || "thread"}\" class=\"flex-1 text-left truncate flex items-center gap-2\">${icon ? `<i data-lucide="${icon}" class="h-4 w-4"></i>` : ""}${t.pinned ? "📌 " : ""}${esc$1(t.title || "Untitled")}${t.status === "modified" ? "*" : t.status === "new" ? "+" : ""}</button><button data-thread-menu=\"${t.id}\" class=\"h-8 w-8 rounded hover:bg-gray-100 flex items-center justify-center\" title=\"More\"><i data-lucide=\"more-horizontal\" class="h-4 w-4"></i></button></div>`;
 };
 var sortedThreads = [];
 var isAddingThreads = false;
@@ -2956,7 +3493,7 @@ Object.assign(window, {
 	num,
 	int,
 	gid,
-	esc,
+	esc: esc$1,
 	positionPopover,
 	sid,
 	fmtSize,
