@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-Zi8jxvci.js","assets/src-scQar_nB.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/mediabunny-aac-encoder-BCr0zFzE.js","assets/src-scQar_nB.js"])))=>i.map(i=>d[i]);
 // \0vite/modulepreload-polyfill.js
 (function polyfill() {
 	const relList = document.createElement("link").relList;
@@ -185,7 +185,13 @@ var asDataURL = (f) => new Promise((r) => {
 	fr.onload = () => r(String(fr.result || ""));
 	fr.readAsDataURL(f);
 });
-var imgToWebp = (f, D = 96, q = 75, k) => new Promise((r, j) => {
+var noIcc = (u) => {
+	const b = atob(b64(u)), c = (i) => b.charCodeAt(i), f = c(20) & 223;
+	if (b.slice(12, 16) + b.slice(30, 34) != "VP8XICCP") return u;
+	const n = c(34) | c(35) << 8 | c(36) << 16 | c(37) << 24, s = (f ? b.slice(12, 20) + String.fromCharCode(f) + b.slice(21, 30) : "") + b.slice(38 + n + n % 2), l = s.length + 4;
+	return u.split(",")[0] + "," + btoa("RIFF" + String.fromCharCode(l & 255, l >> 8 & 255, l >> 16 & 255, l >>> 24) + "WEBP" + s);
+};
+var imgToWebp = (f, D = 96, q = 75, k, s) => new Promise((r, j) => {
 	if (!f) return j();
 	const i = new Image();
 	i.onload = () => {
@@ -196,7 +202,8 @@ var imgToWebp = (f, D = 96, q = 75, k) => new Promise((r, j) => {
 		c.width = w;
 		c.height = h;
 		x.drawImage(i, 0, 0, w, h);
-		r(c.toDataURL("image/webp", clamp(q, 0, 100) / 100));
+		const u = c.toDataURL("image/webp", clamp(q, 0, 100) / 100);
+		r(s ? noIcc(u) : u);
 		URL.revokeObjectURL(i.src);
 	};
 	i.onerror = () => (URL.revokeObjectURL(i.src), j(/* @__PURE__ */ new Error("this browser can't read this image format")));
@@ -1479,7 +1486,7 @@ var loadMb = async () => {
 		sampleRate: 48e3,
 		bitrate: AUDIO_BPS
 	})) (await __vitePreload(async () => {
-		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-Zi8jxvci.js");
+		const { registerAacEncoder } = await import("./mediabunny-aac-encoder-BCr0zFzE.js");
 		return { registerAacEncoder };
 	}, __vite__mapDeps([0,1]))).registerAacEncoder();
 	return mb = m;
@@ -2552,7 +2559,7 @@ $(el.sunePopover).on("click", async (e) => {
 			const f = i.files?.[0];
 			if (!f) return;
 			try {
-				s.avatar = await imgToWebp(f);
+				s.avatar = await imgToWebp(f, void 0, void 0, 0, 1);
 				await updateAndRender();
 			} catch {}
 		};
