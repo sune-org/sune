@@ -17,7 +17,17 @@ export const fmtSize = b => {
   return (x >= 10 ? Math.round(x) : Math.round(x * 10) / 10) + ' ' + u[i];
 };
 export const asDataURL = f => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(String(fr.result || '')); fr.readAsDataURL(f); });
-export const imgToWebp = (f, D = 96, q = 75, k) => new Promise((r, j) => {
+// Chrome tags every canvas WebP with a 456-byte sRGB profile. Untagged pixels are read as sRGB anyway,
+// so imgToWebp's s flag drops it, and the VP8X header with it when no other flag (alpha, EXIF, ...) still needs one
+const noIcc = u => {
+  const b = atob(b64(u)), c = i => b.charCodeAt(i), f = c(20) & 223;
+  if (b.slice(12, 16) + b.slice(30, 34) != 'VP8XICCP') return u;
+  const n = c(34) | c(35) << 8 | c(36) << 16 | c(37) << 24,
+    s = (f ? b.slice(12, 20) + String.fromCharCode(f) + b.slice(21, 30) : '') + b.slice(38 + n + n % 2),
+    l = s.length + 4;
+  return u.split(',')[0] + ',' + btoa('RIFF' + String.fromCharCode(l & 255, l >> 8 & 255, l >> 16 & 255, l >>> 24) + 'WEBP' + s);
+};
+export const imgToWebp = (f, D = 96, q = 75, k, s) => new Promise((r, j) => {
   if (!f) return j();
   const i = new Image;
   i.onload = () => {
@@ -26,7 +36,8 @@ export const imgToWebp = (f, D = 96, q = 75, k) => new Promise((r, j) => {
     const c = document.createElement('canvas'), x = c.getContext('2d');
     if (D > 0 && Math.max(w, h) > D) w > h ? (h = D * h / w, w = D) : (w = D * w / h, h = D);
     c.width = w; c.height = h; x.drawImage(i, 0, 0, w, h);
-    r(c.toDataURL('image/webp', clamp(q, 0, 100) / 100));
+    const u = c.toDataURL('image/webp', clamp(q, 0, 100) / 100);
+    r(s ? noIcc(u) : u);
     URL.revokeObjectURL(i.src);
   };
   i.onerror = () => (URL.revokeObjectURL(i.src), j(new Error("this browser can't read this image format")));
