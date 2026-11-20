@@ -20,7 +20,7 @@ export default defineConfig({
         background_color:'#000000',
         categories:['productivity','utilities'],
         icons:[{ src:'/appstore_content/✺.png', sizes:'1024x1024', type:'image/png' }],
-        screenshots:[{ src:'/appstore_content/screenshot1.jpg', sizes:'1344x2693', type:'image/jpeg' },{ src:'/appstore_content/screenshot2.jpg', sizes:'1344x2699', type:'image/jpeg' }]
+        screenshots:[{ src:'/appstore_content/screenshot1.jpg', sizes:'1236x2676', type:'image/jpeg' },{ src:'/appstore_content/screenshot2.jpg', sizes:'1236x2676', type:'image/jpeg' }]
       }
     })
   ]
