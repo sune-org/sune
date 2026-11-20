@@ -48,7 +48,7 @@ Short pages on the things worth knowing.
 | [Sunes](sunes.md) | Creating, switching, prompts, sharing, the store |
 | [Sync and backup](sync.md) | Keeping threads and sunes on GitHub, and what to watch out for |
 | [Attachments](attachments.md) | What you can attach and what happens to it |
-| [Scripting](scripting.md) | Giving a sune its own interface with HTML and JavaScript |
+| [Scripting](scripting.md) | Giving a sune its own interface with HTML and JavaScript, or having a model build it for you |
 | [Tips](tips.md) | Regenerating, mixing models in one chat, limits, error messages |
 
 ## Sunes
