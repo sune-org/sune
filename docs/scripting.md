@@ -11,7 +11,7 @@ You don't have to write the code yourself. The next section has a model build it
 
 ## Let a model build it
 
-**Sune Builder Girl**, from the store, is made for this. She has a **GitHub Fetch** bar above the chat, and it is there on purpose: fetch `sune-org/sune` and the app's own source is added to the chat, together with these guides. The model then builds your sune knowing how Sune really works, instead of guessing.
+**Sune Builder Girl**, from the store, is made for this. She has a **GitHub Fetch** bar above the chat, and it is there on purpose: fetch `sune-org/sune` and the app's own source is added to the chat. The model then builds your sune knowing how Sune really works, instead of guessing.
 
 <p align="center">
   <img src="img/builder-fetch.png" alt="Sune Builder Girl with sune-org/sune fetched into the chat" width="250">
@@ -26,9 +26,9 @@ To change the sune later, go back to that chat and say what should be different.
 
 Worth knowing:
 
-- **The fetch adds about 50,000 tokens to the chat.** Do it once per chat, not before every request, and use a model with a large context window.
+- **The fetch adds about 40,000 tokens to the chat.** Do it once per chat, not before every request, and use a model with a large context window.
 - **No GitHub token is needed** for a public repo. If the bar reports a rate limit, add a token under **User → Settings → API**.
-- **Leave *Respect .suneignore* ticked.** It skips the built files and images, which are no use to the model.
+- **Leave *Respect .suneignore* ticked.** It skips the built files, images and docs, which the model doesn't need.
 - **The bar takes single files and pasted GitHub links too.** A `.sune` file is shown as its HTML, so you can hand her an existing sune to learn from or improve: `sune-org/store/note.sune`.
 - **She is set to a Google model.** Change the model name if you use another provider.
 
