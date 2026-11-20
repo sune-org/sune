@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-Sune's own code is covered by [LICENSE](./LICENSE). This file covers third-party code that this repository redistributes in the committed build output (`dist/`).
+Sune's own code is covered by [LICENSE](./LICENSE). This file covers third-party code that ends up in the built site (`dist/`). The build is not committed here: Cloudflare Pages produces it on every deploy and serves it from sune.planetrenox.com.
 
 ## Bundled in `dist/`
 
@@ -41,7 +41,7 @@ SOFTWARE.
 
 ## Loaded at runtime from CDNs (not redistributed)
 
-These libraries are fetched by the browser from their CDNs and are not included in this repository. They are listed here for reference.
+These libraries are fetched by the browser from their CDNs and are not included in this repository or in the build. They are listed here for reference.
 
 | Library | License |
 |---|---|

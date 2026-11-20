@@ -87,7 +87,7 @@ bun install
 bun run dev
 ```
 
-- The app is a static site built with Vite. CI rebuilds `dist/` on every push, so don't commit it by hand.
+- The app is a static site built with Vite. Cloudflare Pages builds and deploys it on every push to `master`, and builds a preview for any other branch. `dist/` is not committed.
 - Replies stream through the [proxy](https://github.com/sune-org/us.proxy.sune.planetrenox.com), which only accepts browser connections from the official site and from GitHub Pages sites (`*.github.io`). A local dev server can't use it. Run your own proxy and point `WS_URL` in [`src/streaming.js`](../src/streaming.js) at it.
 - The Android app is a thin wrapper around the website. See [android/README.md](../android/README.md) for releases and how to verify a download.
 - LaTeX and figures come from [markdown-it-latex-plus](https://github.com/sune-org/markdown-it-latex-plus).
