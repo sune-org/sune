@@ -15,7 +15,7 @@ permissions: {}
 
 jobs:
   apk:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 30
     permissions:
       contents: write # create the tag + release
@@ -50,11 +50,11 @@ jobs:
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
-          java-version: 17
+          java-version: '17.0.21+9'
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version: '24.22.3'
 
       - name: Install Android SDK + Bubblewrap
         run: |
